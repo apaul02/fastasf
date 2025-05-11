@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1746954228996,
+      "tag": "0000_living_leech",
+      "breakpoints": true
+    }
+  ]
+}

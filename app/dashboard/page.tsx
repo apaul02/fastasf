@@ -1,3 +1,4 @@
+import { KanbanBoard } from "@/components/kanban-board"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
@@ -10,9 +11,10 @@ export default async function Dashboard() {
     redirect("/")
   }
   return (
-    <div>
-      This is the dashboard page
+     <main className="container mx-auto p-4 md:p-6">
+      <h1 className="mb-8 text-3xl font-bold">Kanban Board</h1>
+      <KanbanBoard />
       {JSON.stringify(session)}
-    </div>
+    </main>
   )
 }

@@ -15,6 +15,7 @@ export function GithubLoginButton() {
       await authClient.signIn.social({
         provider: "github",
         callbackURL: "/dashboard",
+        newUserCallbackURL: "/welcome"
       });
     } catch (error) {
       console.error("GitHub login failed:", error);

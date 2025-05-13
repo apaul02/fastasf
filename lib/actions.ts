@@ -1,6 +1,6 @@
 "use server"
 
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import { auth } from "./auth"
 import { MUTATIONS } from "./db/queries"
 
@@ -15,10 +15,11 @@ export async function onBoardUserAction(name: string) {
 
   const workspace = await MUTATIONS.onBoardUser(session.user.id, name)
   if (!workspace) {
-    return { succes: false, error: "Failed to create workspace" }
+    return { success: false, error: "Failed to create workspace" }
   }
+  const c = await cookies();
+  c.set("force-refresh", JSON.stringify(Math.random()))
+  return { success: true, workspaceId: workspace }
 
-  return { success: true, workspaceId: workspace.id }
 
-
-}
+} 

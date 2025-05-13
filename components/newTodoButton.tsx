@@ -1,5 +1,5 @@
 "use client"
-import { z } from "better-auth"
+import { z } from "zod"
 import { Dialog, DialogContent, DialogHeader, DialogTrigger } from "./ui/dialog"
 import { Button } from "./ui/button"
 import { useForm } from "react-hook-form"

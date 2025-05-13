@@ -1,7 +1,7 @@
 import "server-only";
 import { db } from ".";
 import { v4 as uuidv4 } from "uuid";
-import { workspace } from "./schema";
+import { todos, workspace } from "./schema";
 import { eq } from "drizzle-orm";
 
 export const MUTATIONS = {
@@ -22,4 +22,10 @@ export const QUERIES = {
       .from(workspace)
       .where(eq(workspace.userId, userId));
   },
+  getTodosByWorkSpaceId: async function (workspaceId: string) {
+    return await db
+      .select()
+      .from(todos)
+      .where(eq(todos.workspaceId, workspaceId));
+  }
 }

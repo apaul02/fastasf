@@ -1,26 +1,51 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth";
+import { onBoardUserAction } from "@/lib/actions";
 import { authClient } from "@/lib/auth-client";
 import { Github } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function GithubLoginButton() {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useRouter();
 
   const handleLogin = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      await authClient.signIn.social({
+      const authResponse = await authClient.signIn.social({
         provider: "github",
-        callbackURL: "/dashboard",
-        newUserCallbackURL: "/welcome"
+        callbackURL: "/",
       });
+      // window.location.reload();
+
+
+      if (authResponse.error) {
+        console.error("GitHub login error:", authResponse.error);
+        //TODO: Show error message to user
+        setIsLoading(false);
+        return;
+      }
+
+      // const result = await onBoardUserAction();
+
+      // if(result.success && result.workspaceId) {
+      //   if(result.isNew) {
+      //     console.log("New user onboarded successfully", result.workspaceId);
+      //   } else {
+      //     console.log("Existing user found, workspace ID:", result.workspaceId);
+      //   }
+      //   navigate.push(`/w/${result.workspaceId}`);
+      // }else {
+      //   console.error("Failed to onboard user:", result.error);
+      //   //TODO: Show error message to user
+      // }
     } catch (error) {
       console.error("GitHub login failed:", error);
+      //TODO: Show error message to user
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); 
     }
   };
 
@@ -49,7 +74,7 @@ export function GithubLoginButton() {
             cy="12"
             r="10"
             stroke="currentColor"
-            strokeWidth="4"
+            strokeWidth="4" 
           ></circle>
           <path
             className="opacity-75"

@@ -5,7 +5,7 @@ import { todos, workspace } from "./schema";
 import { eq } from "drizzle-orm";
 
 export const MUTATIONS = {
-  onBoardUser: async function (userId: string, name: string) {
+  createWorkspace: async function (userId: string, name: string) {
     const result = await db.insert(workspace).values({
       id: uuidv4(),
       name: name,
@@ -27,5 +27,12 @@ export const QUERIES = {
       .select()
       .from(todos)
       .where(eq(todos.workspaceId, workspaceId));
+  },
+  getWorkspaceById: async function (workspaceId: string) {
+    const result = await db
+      .select()
+      .from(workspace)
+      .where(eq(workspace.id, workspaceId));
+    return result[0];
   }
 }

@@ -16,6 +16,8 @@ export default async function Welcome() {
         <div className="flex items-center justify-center w-full max-w-4xl px-4">
           <CreateWorkspaceCard />
           <WorkspaceCard workspace={workspaces} />
+          {JSON.stringify(session?.user)}
+
         </div>
       </div>
     </main>

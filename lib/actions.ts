@@ -36,3 +36,24 @@ export async function onBoardUserAction() {
     return { success: true, workspaceId: newWorkspace.id, isNew: true }
   }
 } 
+
+export async function createWorkspaceAction(workspaceName: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", workspaceId: null }
+  }
+
+  const userId = session.user.id;
+
+  const newWorkspace = await MUTATIONS.createWorkspace(userId, workspaceName);
+  if(!newWorkspace || !newWorkspace.id) {
+    return { success: false, error: "Failed to create personal workspace for new user", workspaceId: null }
+  }
+
+  const c = await cookies();
+  c.set("force-refresh", JSON.stringify(Math.random()))
+  return { success: true, workspaceId: newWorkspace.id }
+}

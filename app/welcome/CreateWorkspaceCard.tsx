@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { onBoardUserAction } from "@/lib/actions";
+import { createWorkspaceAction, onBoardUserAction } from "@/lib/actions";
 import { z } from "zod";
 import { useState } from "react";
 
@@ -26,9 +26,10 @@ export function CreateWorkspaceCard() {
         console.log(validation.error.format().name?._errors[0]);
         return;
       }
-      const response = await onBoardUserAction(workspaceName);
+      const response = await createWorkspaceAction  (workspaceName);
       if(response.success) {
         console.log("Workspace created successfully:", response.workspaceId);
+        setWorkspaceName("");
         
       }else {
         console.log(response.error)

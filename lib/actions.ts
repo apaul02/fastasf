@@ -57,3 +57,24 @@ export async function createWorkspaceAction(workspaceName: string) {
   c.set("force-refresh", JSON.stringify(Math.random()))
   return { success: true, workspaceId: newWorkspace.id }
 }
+
+export async function createTodoAction(title: string, workspaceId: string, priority: number, dueDate?: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", todoId: null }
+  }
+
+  const userId = session.user.id;
+
+  const newTodo = await MUTATIONS.createTodo(title, workspaceId, userId, priority, dueDate);
+  if(!newTodo || !newTodo.id) {
+    return { success: false, error: "Failed to create personal workspace for new user", todoId: null }
+  }
+  const c = await cookies();
+  c.set("force-refresh", JSON.stringify(Math.random()))
+
+  return { success: true, todoId: newTodo.id }
+}

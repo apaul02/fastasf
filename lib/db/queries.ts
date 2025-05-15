@@ -12,6 +12,17 @@ export const MUTATIONS = {
       userId: userId,
     }).returning();
     return result[0];
+  },
+  createTodo: async function (title: string, workspaceId: string, userId: string, priority: number, dueDate?: string) {
+    const result = await db.insert(todos).values({
+      id: uuidv4(),
+      title: title,
+      workspaceId: workspaceId,
+      userId: userId,
+      dueDate: dueDate,
+      priority: priority
+    }).returning();
+    return result[0];
   }
 }
 
@@ -34,5 +45,5 @@ export const QUERIES = {
       .from(workspace)
       .where(eq(workspace.id, workspaceId));
     return result[0];
-  }
+  },
 }

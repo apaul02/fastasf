@@ -3,7 +3,6 @@ import { QUERIES } from "@/lib/db/queries";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { WorkspaceContents } from "./workspaceContents";
-import { NewTodoButton } from "@/components/newTodoButton";
 
 export default async function WorkspacePage(props: { params: Promise<{workspaceId: string}> }) {
   const session = await auth.api.getSession({
@@ -23,9 +22,7 @@ export default async function WorkspacePage(props: { params: Promise<{workspaceI
   ]);
   return (
     <main>
-      <WorkspaceContents workspaces={allWorkspaces} currentWorkspace={currentWorkspace} />
-      <NewTodoButton workspaceId={currentWorkspace.id} />
-      {JSON.stringify(todos)}
+      <WorkspaceContents workspaces={allWorkspaces} currentWorkspace={currentWorkspace} todos={todos} />
     </main>
   )
 

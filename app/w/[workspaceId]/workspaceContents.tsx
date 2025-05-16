@@ -1,22 +1,30 @@
 "use client"
 
-import { CreateWorkspaceCard } from "@/app/welcome/CreateWorkspaceCard"
+import { NewTodoButton } from "@/components/newTodoButton"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { createWorkspaceAction } from "@/lib/actions"
-import { workspaceType } from "@/lib/types"
+import { TodosType, workspaceType } from "@/lib/types"
 import { Loader2, Plus, User } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
+import { TodoCard } from "./todo-card"
+import { add, endOfDay } from "date-fns"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
 });
 
-export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType}) {
+const getStartOfDay = (date: Date) => {
+  const newDate = new Date(date);
+  newDate.setHours(0, 0, 0, 0);
+  return newDate;
+}
+
+export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[]}) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
@@ -68,6 +76,18 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         setIsLoading(false);
       }
     }
+
+    const categorizeTodos = useMemo(() => {
+      const today = getStartOfDay(new Date());
+      const nextSevenDays = endOfDay(add(today, { days: 7 }));
+
+      const overdueTodayNoDateTodos: TodosType[] = [];
+      const nextSevenDaysTodos: TodosType[] = [];
+      const upcomingTodos: TodosType[] = [];
+
+      
+
+    }, [props.todos]);
   
   return (
     <div className="flex flex-col min-h-screen">
@@ -128,8 +148,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       
       {/* Main content */}
       <div className="flex-1 p-4">
-        {/* Your workspace content goes here */}
-        {/* <CreateWorkspaceCard /> */}
+        <NewTodoButton workspaceId={props.currentWorkspace.id} />
+        <TodoCard todos={props.todos} />
       </div>
     </div>
   )

@@ -1,6 +1,10 @@
 # New todo app
-- [ ] Add db and drizzle
-- [ ] Add auth with nextauth
-- [ ] create basic pages (Home, login, signup, main)
-- [ ] set up the kanban board
-- [ ] set up drag and drop
+- [ ] delete workspace
+- [ ] todo card
+- [ ] mark todo as done
+- [ ] signout
+- [ ] add a ci
+- [ ] darg and drop 
+- [ ] make it fast
+- [ ] ui revamp(major)
+- [ ] invite members to a workspace

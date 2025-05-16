@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
 import { TodoCard } from "./todo-card"
-import { add, endOfDay } from "date-fns"
+import { add, endOfDay, isBefore, isToday, parse } from "date-fns"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -85,7 +85,30 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       const nextSevenDaysTodos: TodosType[] = [];
       const upcomingTodos: TodosType[] = [];
 
-      
+      props.todos.forEach(todo => {
+        if(!todo.dueDate) {
+          overdueTodayNoDateTodos.push(todo);
+          return;
+        }
+
+        const parsedDate = parse(todo.dueDate,"yyyy-MM-dd'T'HH:mm:ss", new Date())
+
+        if(isBefore(parsedDate, today)) {
+          overdueTodayNoDateTodos.push(todo);
+        } else if(isToday(parsedDate)) {
+          overdueTodayNoDateTodos.push(todo);
+        }
+        else if(isBefore(parsedDate, nextSevenDays)) {
+          nextSevenDaysTodos.push(todo);
+        }else {
+          upcomingTodos.push(todo);
+        }
+      })
+      return {
+        overdueTodayNoDateTodos,
+        nextSevenDaysTodos,
+        upcomingTodos
+      }
 
     }, [props.todos]);
   
@@ -149,7 +172,30 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       {/* Main content */}
       <div className="flex-1 p-4">
         <NewTodoButton workspaceId={props.currentWorkspace.id} />
-        <TodoCard todos={props.todos} />
+        <div>
+          <h2 className="text-xl font-semibold mt-4">Overdue Todos / No Date / Today</h2>
+          {categorizeTodos.overdueTodayNoDateTodos.length > 0 ? (
+            <TodoCard todos={categorizeTodos.overdueTodayNoDateTodos} />
+          ) : (
+            <div className="text-gray-500">No overdue todos</div>
+          )}
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mt-4">Next 7 Days</h2>
+          {categorizeTodos.nextSevenDaysTodos.length > 0 ? (
+            <TodoCard todos={categorizeTodos.nextSevenDaysTodos} />
+          ) : (
+            <div className="text-gray-500">No todos due in the next 7 days</div>
+          )}
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold mt-4">Upcoming Todos</h2>
+          {categorizeTodos.upcomingTodos.length > 0 ? (
+            <TodoCard todos={categorizeTodos.upcomingTodos} />
+          ) : (
+            <div className="text-gray-500">No upcoming todos</div>
+          )}
+        </div>
       </div>
     </div>
   )

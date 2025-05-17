@@ -1,9 +1,31 @@
 "use client";
 import { Checkbox } from "@/components/ui/checkbox";
+import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { markTodoAction } from "@/lib/actions";
 import { TodosType } from "@/lib/types";
+import { add, format, isBefore, isThisWeek, isToday, isTomorrow, parse } from "date-fns";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
+function isBeforeNextSevenDays(date: Date) {
+  const today = new Date();
+  const nextWeek = add(today, { days: 7 });
+  return isBefore(date, nextWeek);
+}
+
+function formatDate(date: string | null) {
+  if (!date) return "No due date";
+  const parsedDate = parse(date, "yyyy-MM-dd'T'HH:mm:ss", new Date());
+  if (isToday(parsedDate)) {
+    return "Today at" + format(parsedDate, " h a");
+  } else if (isTomorrow(parsedDate)) {
+    return format(parsedDate, "'Tomorrow' 'at' h a");
+  }else if(isBeforeNextSevenDays(parsedDate)) {
+    return format(parsedDate, "EEEE ' at ' h a");
+  }else {
+    return format(parsedDate, "LLLL d, yyyy, 'at' h a");
+  }
+}
 
 export function TodoCard(props: { todos: TodosType[] }) {
   const router = useRouter();
@@ -63,7 +85,8 @@ export function TodoCard(props: { todos: TodosType[] }) {
               </div>
             </div>
           </div>
-          <p className="text-gray-500">{todo.dueDate}</p>
+          <UpdateDueDateButton todo={todo} />
+          <p className="text-gray-500">{formatDate(todo.dueDate)}</p>
         </div>
       ))}
     </div>

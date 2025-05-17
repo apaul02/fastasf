@@ -29,7 +29,7 @@ const todoSchema = z.object({
   workspaceId: z.string()
 })
 
-function extractDateFromTitle(title: string): Date | null {
+export function extractDateFromTitle(title: string): Date | null {
   const today = new Date()
   
   const patterns = [

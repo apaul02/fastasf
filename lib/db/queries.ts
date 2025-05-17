@@ -33,6 +33,16 @@ export const MUTATIONS = {
     .where(eq(todos.id, todoId))
     .returning();
     return result[0];
+  },
+  updateDueDate: async function (todoId: string, dueDate: string) {
+    const result = await db.update(todos).set(
+      {
+        dueDate: dueDate,
+      }
+    )
+    .where(eq(todos.id, todoId))
+    .returning();
+    return result[0];
   }
 }
 

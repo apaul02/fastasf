@@ -101,3 +101,27 @@ export async function markTodoAction(todoId: string) {
     return { success: false, error: "Server error when marking todo", todoId: null }
   }
 }
+
+export async function updateDueDateAction(todoId: string, dueDate: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", todoId: null }
+  }
+
+  try {
+    const newTodo = await MUTATIONS.updateDueDate(todoId, dueDate);
+    if(!newTodo || !newTodo.id) {
+      return { success: false, error: "Failed to update due date", todoId: null }
+    }
+    const c = await cookies();
+    c.set("force-refresh", JSON.stringify(Math.random()))
+    
+    return { success: true, todoId: newTodo.id }
+  } catch (error) {
+    console.error("Error in updateDueDateAction:", error);
+    return { success: false, error: "Server error when updating due date", todoId: null }
+  }
+}

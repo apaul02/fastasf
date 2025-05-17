@@ -125,3 +125,49 @@ export async function updateDueDateAction(todoId: string, dueDate: string) {
     return { success: false, error: "Server error when updating due date", todoId: null }
   }
 }
+
+export async function deleteTodoAction(todoId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", todoId: null }
+  }
+
+  try {
+    const newTodo = await MUTATIONS.deleteTodo(todoId);
+    if(!newTodo || !newTodo.id) {
+      return { success: false, error: "Failed to delete todo", todoId: null }
+    }
+    // const c = await cookies();
+    // c.set("force-refresh", JSON.stringify(Math.random()))
+    
+    return { success: true, todoId: newTodo.id }
+  } catch (error) {
+    console.error("Error in deleteTodoAction:", error);
+    return { success: false, error: "Server error when deleting todo", todoId: null }
+  }
+}
+
+export async function deleteWorkspaceAction(workspaceId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", workspaceId: null }
+  }
+
+  try {
+    const newWorkspace = await MUTATIONS.deleteWorkspace(workspaceId);
+    if(!newWorkspace || !newWorkspace.id) {
+      return { success: false, error: "Failed to delete workspace", workspaceId: null }
+    }
+    
+    return { success: true, workspaceId: newWorkspace.id }
+  } catch (error) {
+    console.error("Error in deleteWorkspaceAction:", error);
+    return { success: false, error: "Server error when deleting workspace", workspaceId: null }
+  }
+}

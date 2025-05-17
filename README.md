@@ -1,10 +1,14 @@
 # New todo app
-- [ ] delete workspace
-- [ ] todo card
-- [ ] mark todo as done
-- [ ] signout
+- [x] delete workspace
+- [ ] close the drop down after workspace deletes
+- [x] todo card
+- [x] mark todo as done
+- [x] delete todo
+- [x] update todo
+- [x] signout
 - [ ] add a ci
 - [ ] darg and drop 
 - [ ] make it fast
 - [ ] ui revamp(major)
 - [ ] invite members to a workspace
+- cookie vs router.refresh()

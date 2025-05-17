@@ -14,6 +14,7 @@ import { CalendarIcon } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { extractDateFromTitle } from "./newTodoButton";
 import { updateDueDateAction } from "@/lib/actions";
+import { useRouter } from "next/navigation";
 
 const updateDueDateSchema = z.object({
   dueDate: z.date().optional(),
@@ -23,6 +24,7 @@ const updateDueDateSchema = z.object({
 export function UpdateDueDateButton(props: {todo: TodosType }) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(props.todo.dueDate ? parse(props.todo.dueDate, "yyyy-MM-dd'T'HH:mm:ss", new Date()) : undefined);
+  // const router = useRouter();
 
   const form = useForm<z.infer<typeof updateDueDateSchema>>({
     resolver: zodResolver(updateDueDateSchema),
@@ -58,6 +60,7 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
       );
       
       console.log("Due date updated", response);
+      // router.refresh();
       
       setTimeout(() => {
         form.reset({
@@ -76,7 +79,7 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={"outline"} className="w-full">
+        <Button variant={"outline"}>
           Update Due date
         </Button>
       </DialogTrigger>
@@ -114,7 +117,6 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
                             if (date) {
                               setSelectedDate(date)
                               setDueDate(date)
-                              // Clear the text field when using calendar
                               field.onChange("")
                             }
                           }}

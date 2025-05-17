@@ -43,6 +43,14 @@ export const MUTATIONS = {
     .where(eq(todos.id, todoId))
     .returning();
     return result[0];
+  },
+  deleteTodo: async function (todoId: string) {
+    const result = await db.delete(todos).where(eq(todos.id, todoId)).returning();
+    return result[0];
+  },
+  deleteWorkspace: async function (workspaceId: string) {
+    const result = await db.delete(workspace).where(eq(workspace.id, workspaceId)).returning();
+    return result[0];
   }
 }
 

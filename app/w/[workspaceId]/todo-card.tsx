@@ -1,4 +1,5 @@
 "use client";
+import { DeleteTodoButton } from "@/components/DeleteTodoButtom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { markTodoAction } from "@/lib/actions";
@@ -86,6 +87,7 @@ export function TodoCard(props: { todos: TodosType[] }) {
             </div>
           </div>
           <UpdateDueDateButton todo={todo} />
+          <DeleteTodoButton todoId={todo.id} />
           <p className="text-gray-500">{formatDate(todo.dueDate)}</p>
         </div>
       ))}

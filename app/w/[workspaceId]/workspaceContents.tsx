@@ -13,6 +13,7 @@ import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
 import { TodoCard } from "./todo-card"
 import { add, endOfDay, isBefore, isToday, parse } from "date-fns"
+import { authClient } from "@/lib/auth-client"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -84,8 +85,14 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       const overdueTodayNoDateTodos: TodosType[] = [];
       const nextSevenDaysTodos: TodosType[] = [];
       const upcomingTodos: TodosType[] = [];
+      const completedTodos: TodosType[] = [];
 
       props.todos.forEach(todo => {
+        if(todo.completed) {
+          completedTodos.push(todo);
+          return;
+        }
+
         if(!todo.dueDate) {
           overdueTodayNoDateTodos.push(todo);
           return;
@@ -107,7 +114,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       return {
         overdueTodayNoDateTodos,
         nextSevenDaysTodos,
-        upcomingTodos
+        upcomingTodos,
+        completedTodos
       }
 
     }, [props.todos]);
@@ -166,6 +174,11 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
           <Button variant="ghost" size="icon" className="rounded-full" aria-label="User profile">
             <User className="h-5 w-5" />
           </Button>
+          <Button onClick={() => {authClient.signOut({
+            fetchOptions: {
+              onSuccess: () => router.push("/"),
+            }
+          })}}>Signout</Button>
         </div>
       </div>
       

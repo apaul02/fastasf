@@ -2,7 +2,7 @@ import "server-only";
 import { db } from ".";
 import { v4 as uuidv4 } from "uuid";
 import { todos, workspace } from "./schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export const MUTATIONS = {
   createWorkspace: async function (userId: string, name: string) {
@@ -22,6 +22,16 @@ export const MUTATIONS = {
       dueDate: dueDate,
       priority: priority
     }).returning();
+    return result[0];
+  },
+  markTodo: async function (todoId: string) {
+    const result = await db.update(todos).set(
+      {
+        completed: sql`NOT ${todos.completed}`,
+      }
+    )
+    .where(eq(todos.id, todoId))
+    .returning();
     return result[0];
   }
 }

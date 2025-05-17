@@ -78,3 +78,26 @@ export async function createTodoAction(title: string, workspaceId: string, prior
 
   return { success: true, todoId: newTodo.id }
 }
+
+export async function markTodoAction(todoId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", todoId: null }
+  }
+
+  try {
+    const newTodo = await MUTATIONS.markTodo(todoId);
+    if(!newTodo || !newTodo.id) {
+      return { success: false, error: "Failed to mark todo", todoId: null }
+    }
+    
+    
+    return { success: true, todoId: newTodo.id }
+  } catch (error) {
+    console.error("Error in markTodoAction:", error);
+    return { success: false, error: "Server error when marking todo", todoId: null }
+  }
+}

@@ -15,26 +15,26 @@ interface ColumnProps {
 }
 
 export function Column({ column, onDeleteTask, onMarkAsDone, onAddComment }: ColumnProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: column.id,
-    data: {
-      type: "Column",
-      column,
-    },
-  })
+  // const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  //   id: column.id,
+  //   data: {
+  //     type: "Column",
+  //     column,
+  //   },
+  // })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
+  // const style = {
+  //   transform: CSS.Transform.toString(transform),
+  //   transition,
+  // }
 
   return (
     <Card
-      ref={setNodeRef}
-      style={style}
-      className={`flex h-[calc(100vh-16rem)] flex-col ${isDragging ? "opacity-50" : ""}`}
-      {...attributes}
-      {...listeners}
+      // ref={setNodeRef}
+      // style={style}
+      className={`flex h-[calc(100vh-16rem)] flex-col `}
+      // {...attributes}
+      // {...listeners}
     >
       <CardHeader className="p-4">
         <CardTitle className="text-center text-lg">

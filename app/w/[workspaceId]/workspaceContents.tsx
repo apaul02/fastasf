@@ -11,9 +11,11 @@ import { Loader2, Plus, Trash2, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
-import { TodoCard } from "./todo-card"
 import { add, endOfDay, isBefore, isToday, parse } from "date-fns"
 import { authClient } from "@/lib/auth-client"
+import { DndContext, useDroppable } from "@dnd-kit/core"
+import { TodoCard } from "./newTodoCard"
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -35,6 +37,16 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [error, setError] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string>("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const {setNodeRef: setTodayDroppableRef} = useDroppable({
+    id: "todayTodos",
+  })
+  const {setNodeRef: setNextSevenDaysDroppableRef} = useDroppable({
+    id: "nextSevenDaysTodos",
+  })
+  const {setNodeRef: setUpcomingDroppableRef} = useDroppable({
+    id: "upcomingTodos",
+  })
   
   useEffect(() => {
     props.workspaces.forEach(workspace => {
@@ -86,12 +98,10 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
 
       const overdueTodayNoDateTodos: TodosType[] = [];
       const nextSevenDaysTodos: TodosType[] = [];
-      const upcomingTodos: TodosType[] = [];
-      const completedTodos: TodosType[] = [];
+      const upcomingTodosList: TodosType[] = [];
 
       props.todos.forEach(todo => {
         if(todo.completed) {
-          completedTodos.push(todo);
           return;
         }
 
@@ -110,16 +120,14 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         else if(isBefore(parsedDate, nextSevenDays)) {
           nextSevenDaysTodos.push(todo);
         }else {
-          upcomingTodos.push(todo);
+          upcomingTodosList.push(todo);
         }
       })
       return {
         overdueTodayNoDateTodos,
         nextSevenDaysTodos,
-        upcomingTodos,
-        completedTodos
+        upcomingTodosList,
       }
-
     }, [props.todos]);
 
     const handleDeleteWorkspace = async (workspaceId: string) => {
@@ -144,6 +152,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         console.error("Error deleting workspace:", err);
       }finally {
         setIsDeleteDialogOpen(false);
+        setIsDropdownOpen(false);
       }
     }  
   
@@ -154,7 +163,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         <div className="font-semibold text-lg">yep-done: {props.currentWorkspace.name}</div>
         <div>
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
-          <DropdownMenu>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant={"outline"} disabled={isNavigating}>
                 {isNavigating ? (
@@ -265,30 +274,40 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       {/* Main content */}
       <div className="flex-1 p-4">
         <NewTodoButton workspaceId={props.currentWorkspace.id} />
-        <div>
-          <h2 className="text-xl font-semibold mt-4">Overdue Todos / No Date / Today</h2>
-          {categorizeTodos.overdueTodayNoDateTodos.length > 0 ? (
-            <TodoCard todos={categorizeTodos.overdueTodayNoDateTodos} />
-          ) : (
-            <div className="text-gray-500">No overdue todos</div>
-          )}
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold mt-4">Next 7 Days</h2>
-          {categorizeTodos.nextSevenDaysTodos.length > 0 ? (
-            <TodoCard todos={categorizeTodos.nextSevenDaysTodos} />
-          ) : (
-            <div className="text-gray-500">No todos due in the next 7 days</div>
-          )}
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold mt-4">Upcoming Todos</h2>
-          {categorizeTodos.upcomingTodos.length > 0 ? (
-            <TodoCard todos={categorizeTodos.upcomingTodos} />
-          ) : (
-            <div className="text-gray-500">No upcoming todos</div>
-          )}
-        </div>
+            <DndContext>
+          <div className="flex justify-between gap-20">
+            <div className="flex flex-col w-1/3">
+              <h2 className="text-lg font-semibold mb-2">Overdue / Today</h2>
+              <div ref={setTodayDroppableRef} className="h-2">
+              <SortableContext items={categorizeTodos.overdueTodayNoDateTodos.map(todo => todo.id)} strategy={verticalListSortingStrategy}>
+                {categorizeTodos.overdueTodayNoDateTodos.map((todo) => (
+                  <TodoCard key={todo.id} todo={todo} />
+                ))}
+              </SortableContext>
+            </div>
+            </div>
+            <div className="flex flex-col w-1/3">
+              <h2 className="text-lg font-semibold mb-2">Next 7 Days</h2>
+              <div ref={setNextSevenDaysDroppableRef} className="h-2">
+              <SortableContext items={categorizeTodos.nextSevenDaysTodos.map(todo => todo.id)} strategy={verticalListSortingStrategy}>
+                {categorizeTodos.nextSevenDaysTodos.map((todo) => (
+                  <TodoCard key={todo.id} todo={todo} />
+                ))}
+              </SortableContext>
+              </div>
+            </div>
+            <div className="flex flex-col w-1/3">
+              <h2 className="text-lg font-semibold mb-2">Upcoming</h2>
+              <div ref={setUpcomingDroppableRef} className="h-2">
+              <SortableContext items={categorizeTodos.upcomingTodosList.map(todo => todo.id)} strategy={verticalListSortingStrategy}>
+                {categorizeTodos.upcomingTodosList.map((todo) => (
+                  <TodoCard key={todo.id} todo={todo} />
+                ))}
+              </SortableContext>
+            </div>
+            </div>
+          </div>
+          </DndContext>
       </div>
     </div>
   )

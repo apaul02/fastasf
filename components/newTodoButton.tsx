@@ -21,6 +21,7 @@ import {
 import { cn } from "@/lib/utils"
 import { DialogTitle } from "@radix-ui/react-dialog"
 import { createTodoAction } from "@/lib/actions"
+import { TodosType } from "@/lib/types"
 
 const todoSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title should be less than 100 characters"),
@@ -239,7 +240,7 @@ export function extractDateFromTitle(title: string): Date | null {
   return detectedDate && isValid(detectedDate) ? detectedDate : null
 }
 
-export function NewTodoButton(props: { workspaceId: string }) {
+export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?: (todo: TodosType) => void; onOptimisticTodoDelete?: (todoId: string) => void }) {
   const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   
@@ -268,6 +269,24 @@ export function NewTodoButton(props: { workspaceId: string }) {
     console.log("Form submitted", formattedData)
     
     try {
+      // Create optimistic todo
+      const optimisticTodo = {
+        id: `temp-${Date.now()}`, // Temporary ID
+        title: formattedData.title,
+        priority: formattedData.priority,
+        workspaceId: formattedData.workspaceId,
+        dueDate: formattedData.dueDate || null,
+        completed: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: "", // Will be filled by server
+      }
+
+      // Optimistically add the todo
+      if (props.onOptimisticCreate) {
+        props.onOptimisticCreate(optimisticTodo);
+      }
+
       const response = await createTodoAction(
         formattedData.title,
         formattedData.workspaceId, 
@@ -275,6 +294,15 @@ export function NewTodoButton(props: { workspaceId: string }) {
         formattedData.dueDate
       )
       console.log("Todo created", response)
+      
+      if (response.success) {
+        // Update with real ID from server if needed
+        // The server response will trigger a refresh through the useEffect in parent
+      } else {
+        // Handle error - you might want to remove the optimistic todo here
+        props.onOptimisticTodoDelete?.(optimisticTodo.id);
+        console.error("Failed to create todo:", response.error);
+      }
       
       setTimeout(() => {
         form.reset()

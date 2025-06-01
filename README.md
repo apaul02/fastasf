@@ -7,7 +7,7 @@
 - [x] update todo
 - [x] signout
 - [ ] add a ci
-- [ ] darg and drop 
+- [x] darg and drop 
 - [ ] make it fast
 - [ ] ui revamp(major)
 - [ ] invite members to a workspace

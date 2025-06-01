@@ -4,8 +4,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { markTodoAction } from "@/lib/actions";
 import { TodosType } from "@/lib/types";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
 import { useState } from "react";
 
@@ -33,16 +31,6 @@ function formatDate(date: string | null) {
 export function TodoCard(props: { todo: TodosType }) {
   const [optimisticTodos, setOptimisticTodos] = useState<TodosType>(props.todo)
   const [isVisible, setIsVisible] = useState(true);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: props.todo.id,
-    data: {
-      supports: ["todayTodos", "nextSevenDaysTodos", "upcomingTodos"]
-    }
-  });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
 
   async function handleTodoChange() {
     const originalTodo = optimisticTodos;
@@ -69,13 +57,7 @@ export function TodoCard(props: { todo: TodosType }) {
     return null;
   }
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`flex flex-col ${isDragging ? "opacity-50" : ""}`}
-      {...attributes}
-      {...listeners}
-    >
+    <div>
       <div className={`bg-white shadow-md rounded-lg p-4 mb-4 ${optimisticTodos.completed ? "opacity-0" : ""}`.trim()}>
         <div className="flex items-center">
           <Checkbox

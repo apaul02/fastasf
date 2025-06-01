@@ -13,9 +13,7 @@ import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
 import { add, endOfDay, isBefore, isToday, parse } from "date-fns"
 import { authClient } from "@/lib/auth-client"
-import { DndContext, useDroppable } from "@dnd-kit/core"
 import { TodoCard } from "./newTodoCard"
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -38,15 +36,6 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const {setNodeRef: setTodayDroppableRef} = useDroppable({
-    id: "todayTodos",
-  })
-  const {setNodeRef: setNextSevenDaysDroppableRef} = useDroppable({
-    id: "nextSevenDaysTodos",
-  })
-  const {setNodeRef: setUpcomingDroppableRef} = useDroppable({
-    id: "upcomingTodos",
-  })
   
   useEffect(() => {
     props.workspaces.forEach(workspace => {
@@ -274,41 +263,33 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       {/* Main content */}
       <div className="flex-1 p-4">
         <NewTodoButton workspaceId={props.currentWorkspace.id} />
-            <DndContext>
           <div className="flex justify-between gap-20">
             <div className="flex flex-col w-1/3">
               <h2 className="text-lg font-semibold mb-2">Overdue / Today</h2>
-              <div ref={setTodayDroppableRef} className="h-2">
-              <SortableContext items={categorizeTodos.overdueTodayNoDateTodos.map(todo => todo.id)} strategy={verticalListSortingStrategy}>
+              <div>
                 {categorizeTodos.overdueTodayNoDateTodos.map((todo) => (
                   <TodoCard key={todo.id} todo={todo} />
                 ))}
-              </SortableContext>
-            </div>
+              </div>
             </div>
             <div className="flex flex-col w-1/3">
               <h2 className="text-lg font-semibold mb-2">Next 7 Days</h2>
-              <div ref={setNextSevenDaysDroppableRef} className="h-2">
-              <SortableContext items={categorizeTodos.nextSevenDaysTodos.map(todo => todo.id)} strategy={verticalListSortingStrategy}>
+              <div>
                 {categorizeTodos.nextSevenDaysTodos.map((todo) => (
                   <TodoCard key={todo.id} todo={todo} />
                 ))}
-              </SortableContext>
               </div>
             </div>
             <div className="flex flex-col w-1/3">
               <h2 className="text-lg font-semibold mb-2">Upcoming</h2>
-              <div ref={setUpcomingDroppableRef} className="h-2">
-              <SortableContext items={categorizeTodos.upcomingTodosList.map(todo => todo.id)} strategy={verticalListSortingStrategy}>
+              <div>
                 {categorizeTodos.upcomingTodosList.map((todo) => (
                   <TodoCard key={todo.id} todo={todo} />
                 ))}
-              </SortableContext>
-            </div>
             </div>
           </div>
-          </DndContext>
       </div>
+    </div>
     </div>
   )
 }

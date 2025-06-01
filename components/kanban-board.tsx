@@ -113,7 +113,7 @@ export function KanbanBoard() {
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: {
+      activationConstraint: { 
         distance: 3, // 3px
       },
     }),
@@ -385,7 +385,7 @@ export function KanbanBoard() {
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragOver={handleDragOver}>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <SortableContext items={filteredColumns.map((col) => col.id)}>
+          {/* <SortableContext items={filteredColumns.map((col) => col.id)}> */}
             {filteredColumns.map((column) => (
               <ColumnComponent
                 key={column.id}
@@ -395,7 +395,7 @@ export function KanbanBoard() {
                 onAddComment={handleAddComment}
               />
             ))}
-          </SortableContext>
+          {/* </SortableContext> */}
         </div>
 
         <DragOverlay>{activeTask && <TaskCard task={activeTask} onDelete={() => {}} />}</DragOverlay>

@@ -1,6 +1,6 @@
 # New todo app
 - [x] delete workspace
-- [ ] close the drop down after workspace deletes
+- [x] close the drop down after workspace deletes
 - [x] todo card
 - [x] mark todo as done
 - [x] delete todo

@@ -5,15 +5,16 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { createWorkspaceAction, deleteWorkspaceAction } from "@/lib/actions"
+import { createWorkspaceAction, deleteWorkspaceAction, updateDueDateAction } from "@/lib/actions"
 import { TodosType, workspaceType } from "@/lib/types"
 import { Loader2, Plus, Trash2, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
-import { TodoCard } from "./todo-card"
-import { add, endOfDay, isBefore, isToday, parse } from "date-fns"
+import { add, endOfDay, isBefore, isToday, parse, format } from "date-fns"
 import { authClient } from "@/lib/auth-client"
+import { TodoCard } from "./newTodoCard"
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -35,12 +36,18 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [error, setError] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string>("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [optimisticTodos, setOptimisticTodos] = useState<TodosType[]>(props.todos);
   
   useEffect(() => {
     props.workspaces.forEach(workspace => {
       router.prefetch(`/w/${workspace.id}`);
     });
   }, [props.workspaces, router]);
+
+  useEffect(() => {
+    setOptimisticTodos(props.todos);
+  }, [props.todos]);
 
   const handleWorkspaceChange = (workspaceId: string) => {
     if (workspaceId === activeWorkspaceId) return;
@@ -80,18 +87,17 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       }
     }
 
+
     const categorizeTodos = useMemo(() => {
       const today = getStartOfDay(new Date());
       const nextSevenDays = endOfDay(add(today, { days: 7 }));
 
       const overdueTodayNoDateTodos: TodosType[] = [];
       const nextSevenDaysTodos: TodosType[] = [];
-      const upcomingTodos: TodosType[] = [];
-      const completedTodos: TodosType[] = [];
+      const upcomingTodosList: TodosType[] = [];
 
-      props.todos.forEach(todo => {
+      optimisticTodos.forEach(todo => {
         if(todo.completed) {
-          completedTodos.push(todo);
           return;
         }
 
@@ -110,17 +116,27 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         else if(isBefore(parsedDate, nextSevenDays)) {
           nextSevenDaysTodos.push(todo);
         }else {
-          upcomingTodos.push(todo);
+          upcomingTodosList.push(todo);
         }
       })
-      return {
-        overdueTodayNoDateTodos,
-        nextSevenDaysTodos,
-        upcomingTodos,
-        completedTodos
-      }
-
-    }, [props.todos]);
+      return [
+        {
+          id: "overdueTodayNoDateTodos",
+          title: "Overdue / Today",
+          todos: overdueTodayNoDateTodos
+        },
+        {
+          id: "nextSevenDaysTodos",
+          title: "Next 7 Days",
+          todos: nextSevenDaysTodos
+        },
+        {
+          id: "upcomingTodosList",
+          title: "Upcoming",
+          todos: upcomingTodosList
+        }
+      ]
+    }, [optimisticTodos]);
 
     const handleDeleteWorkspace = async (workspaceId: string) => {
       if (workspaceId === props.workspaces[0].id) {
@@ -144,6 +160,77 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         console.error("Error deleting workspace:", err);
       }finally {
         setIsDeleteDialogOpen(false);
+        setIsDropdownOpen(false);
+      }
+    }
+
+    const handleOptimisticTodoCreate = (newTodo: TodosType) => {
+      setOptimisticTodos(prev => [...prev, newTodo]);
+    }
+    const handleOptimisticTodoDelete = (todoId: string) => {
+      setOptimisticTodos(prev => prev.filter(todo => todo.id !== todoId));
+    }
+
+    const handleDragEnd = async (result: any) => {
+      if (!result.destination) {
+        return;
+      }
+
+      const { draggableId, destination } = result;
+      const todoId = draggableId;
+      const dropZoneId = destination.droppableId;
+      
+      let newDueDate: string;
+      const now = new Date();
+
+      switch (dropZoneId) {
+        case "overdueTodayNoDateTodos":
+          // Set to today with time 1 hour later of current time
+          const todayWithOneHour = add(now, { hours: 1 });
+          newDueDate = format(todayWithOneHour, "yyyy-MM-dd'T'HH:mm:ss");
+          break;
+          
+        case "nextSevenDaysTodos":
+          // Set to 7 days from today at 9 AM
+          const sevenDaysLater = add(now, { days: 7 });
+          sevenDaysLater.setHours(9, 0, 0, 0);
+          newDueDate = format(sevenDaysLater, "yyyy-MM-dd'T'HH:mm:ss");
+          break;
+          
+        case "upcomingTodosList":
+          // Set to 8th day from today at 9 AM
+          const eightDaysLater = add(now, { days: 8 });
+          eightDaysLater.setHours(9, 0, 0, 0);
+          newDueDate = format(eightDaysLater, "yyyy-MM-dd'T'HH:mm:ss");
+          break;
+          
+        default:
+          console.log("Unknown drop zone:", dropZoneId);
+          return;
+      }
+
+      // Store original state for rollback
+      const originalTodos = optimisticTodos;
+      
+      // Optimistic update - update UI immediately
+      setOptimisticTodos(prev => prev.map(todo => 
+        todo.id === todoId ? { ...todo, dueDate: newDueDate } : todo
+      ));
+
+      try {
+        const response = await updateDueDateAction(todoId, newDueDate);
+        if (response.success) {
+          console.log("Todo due date updated successfully:", response.todoId);
+          // No need to refresh since we already updated optimistically
+        } else {
+          // Revert to original state on error
+          setOptimisticTodos(originalTodos);
+          console.error("Error updating todo due date:", response.error);
+        }
+      } catch (error) {
+        // Revert to original state on error
+        setOptimisticTodos(originalTodos);
+        console.error("Error updating todo due date:", error);
       }
     }  
   
@@ -154,7 +241,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         <div className="font-semibold text-lg">yep-done: {props.currentWorkspace.name}</div>
         <div>
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
-          <DropdownMenu>
+          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button variant={"outline"} disabled={isNavigating}>
                 {isNavigating ? (
@@ -264,31 +351,95 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       
       {/* Main content */}
       <div className="flex-1 p-4">
-        <NewTodoButton workspaceId={props.currentWorkspace.id} />
-        <div>
-          <h2 className="text-xl font-semibold mt-4">Overdue Todos / No Date / Today</h2>
-          {categorizeTodos.overdueTodayNoDateTodos.length > 0 ? (
-            <TodoCard todos={categorizeTodos.overdueTodayNoDateTodos} />
-          ) : (
-            <div className="text-gray-500">No overdue todos</div>
-          )}
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold mt-4">Next 7 Days</h2>
-          {categorizeTodos.nextSevenDaysTodos.length > 0 ? (
-            <TodoCard todos={categorizeTodos.nextSevenDaysTodos} />
-          ) : (
-            <div className="text-gray-500">No todos due in the next 7 days</div>
-          )}
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold mt-4">Upcoming Todos</h2>
-          {categorizeTodos.upcomingTodos.length > 0 ? (
-            <TodoCard todos={categorizeTodos.upcomingTodos} />
-          ) : (
-            <div className="text-gray-500">No upcoming todos</div>
-          )}
-        </div>
+        <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete} />
+        <DragDropContext onDragEnd={handleDragEnd}>
+          <div className="flex justify-between gap-20">
+            <div className="flex flex-col w-1/3">
+              <h2 className="text-lg font-semibold mb-2">Overdue / Today</h2>
+              <div>
+                <Droppable droppableId="overdueTodayNoDateTodos">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                    >
+                      {categorizeTodos.find(cat => cat.id === "overdueTodayNoDateTodos")?.todos.map((todo, index) => (
+                        <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <TodoCard todo={todo} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            </div>
+            <div className="flex flex-col w-1/3">
+              <h2 className="text-lg font-semibold mb-2">Next 7 Days</h2>
+              <div>
+                <Droppable droppableId="nextSevenDaysTodos">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                    >
+                      {categorizeTodos.find(cat => cat.id === "nextSevenDaysTodos")?.todos.map((todo, index) => (
+                        <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <TodoCard todo={todo} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            </div>
+            <div className="flex flex-col w-1/3">
+              <h2 className="text-lg font-semibold mb-2">Upcoming</h2>
+              <div>
+                <Droppable droppableId="upcomingTodosList">
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                    >
+                      {categorizeTodos.find(cat => cat.id === "upcomingTodosList")?.todos.map((todo, index) => (
+                        <Draggable key={todo.id} draggableId={todo.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                            >
+                              <TodoCard todo={todo} />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            </div>
+          </div>
+        </DragDropContext>
       </div>
     </div>
   )

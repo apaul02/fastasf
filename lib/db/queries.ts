@@ -61,6 +61,10 @@ export const MUTATIONS = {
       content: content,
     }).returning();
     return result[0];
+  },
+  deleteComment: async function (commentId: string) {
+    const result = await db.delete(comments).where(eq(comments.id, commentId)).returning();
+    return result[0];
   }
 }
 

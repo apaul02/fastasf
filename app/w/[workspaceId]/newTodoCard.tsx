@@ -4,10 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { UpdateDueDateButton } from "@/components/UpdateDueDate";
-import { createCommentAction, markTodoAction } from "@/lib/actions";
+import { createCommentAction, deleteCommentAction, markTodoAction } from "@/lib/actions";
 import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
-import { ArrowBigUp } from "lucide-react";
+import { or } from "drizzle-orm";
+import { ArrowBigUp, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 
@@ -31,11 +33,12 @@ function formatDate(date: string | null) {
   }
 }
 
-export function TodoCard(props: { todo: TodosType, comments: commentsType[] }) {
+export function TodoCard(props: { todo: TodosType, comments: commentsType[], onOptimisticDueDateUpdate?: (todoId: string, newDueDate: string) => void }) {
   const [optimisticTodos, setOptimisticTodos] = useState<TodosType>(props.todo)
   const [isVisible, setIsVisible] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
+  const router = useRouter();
 
   useEffect(() => {
     setOptimisticComments(props.comments);
@@ -56,10 +59,13 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[] }) {
       }
       // Optimistically update the UI
       setOptimisticComments(prev => [...prev, newComment]);
+      setCommentContent("");
       const response = await createCommentAction(props.todo.id, commentContent);
       if (response.success) {
       console.log("Comment created successfully:", response.commentId);
-      setCommentContent(""); 
+      router.refresh();
+
+       
       }
       else {
         console.error("Error creating comment:", response.error);
@@ -68,6 +74,22 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[] }) {
       }
     }catch (error) {
       console.error("Error creating comment:", error);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    try {
+      const originalComments = optimisticComments;
+      setOptimisticComments(prev => prev.filter(comment => comment.id !== commentId));
+      const response = await deleteCommentAction(commentId);
+      if (response.success) {
+        console.log("Comment deleted successfully:", response.commentId);
+      } else {
+        console.error("Error deleting comment:", response.error);
+        setOptimisticComments(originalComments);
+      }
+    }catch (error) {
+      console.error("Error deleting comment:", error);
     }
   }
 
@@ -113,7 +135,12 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[] }) {
           </div>
         </div>
         <div className="flex justify-between items-center mt-2">
-          <Input placeholder="Add a comment..." className="mt-2" onChange={(e) => setCommentContent(e.target.value)} />
+          <Input 
+            placeholder="Add a comment..." 
+            className="mt-2" 
+            value={commentContent}
+            onChange={(e) => setCommentContent(e.target.value)} 
+          />
           <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button>
         </div>
         <div>
@@ -123,6 +150,9 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[] }) {
                 <div key={comment.id} className="border-b border-gray-200 py-2">
                   <p>{comment.content}</p>
                   <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
+                  <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleDeleteComment(comment.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>

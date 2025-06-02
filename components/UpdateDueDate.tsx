@@ -24,7 +24,7 @@ const updateDueDateSchema = z.object({
 export function UpdateDueDateButton(props: {todo: TodosType }) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(props.todo.dueDate ? parse(props.todo.dueDate, "yyyy-MM-dd'T'HH:mm:ss", new Date()) : undefined);
-  // const router = useRouter();
+  const router = useRouter();
 
   const form = useForm<z.infer<typeof updateDueDateSchema>>({
     resolver: zodResolver(updateDueDateSchema),
@@ -60,7 +60,7 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
       );
       
       console.log("Due date updated", response);
-      // router.refresh();
+      router.refresh();
       
       setTimeout(() => {
         form.reset({

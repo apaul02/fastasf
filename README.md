@@ -7,7 +7,12 @@
 - [x] update todo
 - [x] signout
 - [ ] add a ci
-- [x] darg and drop 
+- [x] darg and drop
+- [x] comments
+- [x] delete comments
+- [ ] Enter key to add comments
+- [ ] mark todo optimistic ui action redo
+- [ ] update todo optimistic ui problem
 - [ ] make it fast
 - [ ] ui revamp(major)
 - [ ] invite members to a workspace

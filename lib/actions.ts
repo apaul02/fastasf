@@ -195,3 +195,26 @@ export async function createCommentAction(todoId: string, content: string) {
     return { success: false, error: "Server error when creating comment", commentId: null }
   }
 }
+
+
+export async function deleteCommentAction(commentId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", commentId: null }
+  }
+
+  try {
+    const deletedComment = await MUTATIONS.deleteComment(commentId);
+    if(!deletedComment || !deletedComment.id) {
+      return { success: false, error: "Failed to delete comment", commentId: null }
+    }
+    
+    return { success: true, commentId: deletedComment.id }
+  } catch (error) {
+    console.error("Error in deleteCommentAction:", error);
+    return { success: false, error: "Server error when deleting comment", commentId: null }
+  }
+}

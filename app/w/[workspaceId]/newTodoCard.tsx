@@ -7,7 +7,6 @@ import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { createCommentAction, deleteCommentAction, markTodoAction } from "@/lib/actions";
 import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
-import { or } from "drizzle-orm";
 import { ArrowBigUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -33,8 +32,7 @@ function formatDate(date: string | null) {
   }
 }
 
-export function TodoCard(props: { todo: TodosType, comments: commentsType[], onOptimisticDueDateUpdate?: (todoId: string, newDueDate: string) => void }) {
-  const [optimisticTodos, setOptimisticTodos] = useState<TodosType>(props.todo)
+export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: TodosType) => void, comments: commentsType[]}) {
   const [isVisible, setIsVisible] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
@@ -94,8 +92,7 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[], onO
   }
 
   async function handleTodoChange() {
-    const originalTodo = optimisticTodos;
-    setOptimisticTodos(prev => ({ ...prev, completed: !prev.completed }));
+    props.optimisticMarkTodo(props.todo);
     setIsVisible(false);
 
     try {
@@ -104,12 +101,12 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[], onO
         console.log("Todo marked successfully:", response.todoId);
       } else {
         console.error("Error marking todo:", response.error);
-        setOptimisticTodos(originalTodo);
+        props.optimisticMarkTodo(props.todo);
         setIsVisible(true); 
       }
     } catch (error) {
       console.error("Error marking todo:", error);
-      setOptimisticTodos(originalTodo);
+      props.optimisticMarkTodo(props.todo)
       setIsVisible(true);
     }
   }
@@ -119,17 +116,17 @@ export function TodoCard(props: { todo: TodosType, comments: commentsType[], onO
   }
   return (
     <div>
-      <div className={`bg-white shadow-md rounded-lg p-4 mb-4 ${optimisticTodos.completed ? "opacity-0" : ""}`.trim()}>
+      <div className={`bg-white shadow-md rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
         <div className="flex items-center">
           <Checkbox
-            checked={optimisticTodos.completed}
+            checked={props.todo.completed}
             onCheckedChange={handleTodoChange}
             className="mr-2"
           />
           <div>
-            <div>{optimisticTodos.title}</div>
-            {/* <div>{optimisticTodos.id}</div> */}
-            <div>{formatDate(optimisticTodos.dueDate)}</div>
+            <div>{props.todo.title}</div>
+            <div>{props.todo.id}</div>
+            <div>{formatDate(props.todo.dueDate)}</div>
             <UpdateDueDateButton todo={props.todo} />
             <DeleteTodoButton todoId={props.todo.id} />
           </div>

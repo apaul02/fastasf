@@ -11,8 +11,8 @@
 - [x] comments
 - [x] delete comments
 - [ ] Enter key to add comments
-- [ ] mark todo optimistic ui action redo
-- [ ] update todo optimistic ui problem
+- [x] mark todo optimistic ui action redo
+- [x] update todo optimistic ui problem
 - [ ] make it fast
 - [ ] ui revamp(major)
 - [ ] invite members to a workspace

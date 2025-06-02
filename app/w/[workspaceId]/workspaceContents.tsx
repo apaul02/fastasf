@@ -171,6 +171,11 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
     const handleOptimisticTodoDelete = (todoId: string) => {
       setOptimisticTodos(prev => prev.filter(todo => todo.id !== todoId));
     }
+    const handleMarkTodo = (todo: TodosType) => {
+      setOptimisticTodos(prev => prev.map(t => 
+        t.id === todo.id ? { ...t, completed: !t.completed } : t
+      ));
+    }
 
     const handleDragEnd = async (result: DropResult) => {
       if (!result.destination) {
@@ -372,7 +377,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
+                              <TodoCard todo={todo} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>
@@ -400,7 +405,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
+                              <TodoCard todo={todo} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>
@@ -428,7 +433,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} comments={props.comments.filter((comment) => comment.todoId === todo.id)} />
+                              <TodoCard todo={todo} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)} />
                             </div>
                           )}
                         </Draggable>

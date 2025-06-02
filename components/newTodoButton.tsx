@@ -285,6 +285,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
       // Optimistically add the todo
       if (props.onOptimisticCreate) {
         props.onOptimisticCreate(optimisticTodo);
+        setOpen(false);
       }
 
       const response = await createTodoAction(
@@ -300,15 +301,15 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
         // The server response will trigger a refresh through the useEffect in parent
       } else {
         // Handle error - you might want to remove the optimistic todo here
-        props.onOptimisticTodoDelete?.(optimisticTodo.id);
+        if(props.onOptimisticTodoDelete) {
+          props.onOptimisticTodoDelete(optimisticTodo.id);
+        }
         console.error("Failed to create todo:", response.error);
       }
       
-      setTimeout(() => {
-        form.reset()
-        setSelectedDate(undefined)
-        setOpen(false)
-      }, 100)
+      form.reset();
+      setSelectedDate(undefined);
+      setOpen(false);
       
       return formattedData
     } catch (error) {

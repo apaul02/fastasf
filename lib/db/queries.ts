@@ -1,8 +1,9 @@
 import "server-only";
 import { db } from ".";
 import { v4 as uuidv4 } from "uuid";
-import { todos, workspace } from "./schema";
+import { comments, todos, workspace } from "./schema";
 import { eq, sql } from "drizzle-orm";
+import { create } from "domain";
 
 export const MUTATIONS = {
   createWorkspace: async function (userId: string, name: string) {
@@ -51,6 +52,15 @@ export const MUTATIONS = {
   deleteWorkspace: async function (workspaceId: string) {
     const result = await db.delete(workspace).where(eq(workspace.id, workspaceId)).returning();
     return result[0];
+  },
+  createComment: async function (todoId: string, userId: string, content: string) {
+    const result = await db.insert(comments).values({
+      id: uuidv4(),
+      todoId: todoId,
+      userId: userId,
+      content: content,
+    }).returning();
+    return result[0];
   }
 }
 
@@ -74,4 +84,10 @@ export const QUERIES = {
       .where(eq(workspace.id, workspaceId));
     return result[0];
   },
+  getCommentsByUserId: async function (userId: string) {
+    return await db
+      .select()
+      .from(comments)
+      .where(eq(comments.userId, userId));
+  }
 }

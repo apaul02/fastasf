@@ -1,11 +1,14 @@
 "use client"
 import { DeleteTodoButton } from "@/components/DeleteTodoButtom";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { UpdateDueDateButton } from "@/components/UpdateDueDate";
-import { markTodoAction } from "@/lib/actions";
-import { TodosType } from "@/lib/types";
+import { createCommentAction, markTodoAction } from "@/lib/actions";
+import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
-import { useState } from "react";
+import { ArrowBigUp } from "lucide-react";
+import { useEffect, useState } from "react";
 
 
 function isBeforeNextSevenDays(date: Date) {
@@ -28,14 +31,50 @@ function formatDate(date: string | null) {
   }
 }
 
-export function TodoCard(props: { todo: TodosType }) {
+export function TodoCard(props: { todo: TodosType, comments: commentsType[] }) {
   const [optimisticTodos, setOptimisticTodos] = useState<TodosType>(props.todo)
   const [isVisible, setIsVisible] = useState(true);
+  const [commentContent, setCommentContent] = useState("");
+  const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
+
+  useEffect(() => {
+    setOptimisticComments(props.comments);
+  }, [props.comments]);
+
+  async function handleCommentSubmit() {
+    if(commentContent.trim() === "") {
+      return;
+    }
+    try {
+      const newComment: commentsType = {
+        id: `temp-${Date.now()}`, // Temp ID for optimistic ui
+        content: commentContent,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        todoId: props.todo.id,
+        userId: ""
+      }
+      // Optimistically update the UI
+      setOptimisticComments(prev => [...prev, newComment]);
+      const response = await createCommentAction(props.todo.id, commentContent);
+      if (response.success) {
+      console.log("Comment created successfully:", response.commentId);
+      setCommentContent(""); 
+      }
+      else {
+        console.error("Error creating comment:", response.error);
+        setOptimisticComments(prev => prev.filter(comment => comment.id !== newComment.id));
+      
+      }
+    }catch (error) {
+      console.error("Error creating comment:", error);
+    }
+  }
 
   async function handleTodoChange() {
     const originalTodo = optimisticTodos;
     setOptimisticTodos(prev => ({ ...prev, completed: !prev.completed }));
-    setIsVisible(false); // Disappears instantly
+    setIsVisible(false);
 
     try {
       const response = await markTodoAction(props.todo.id);
@@ -67,10 +106,29 @@ export function TodoCard(props: { todo: TodosType }) {
           />
           <div>
             <div>{optimisticTodos.title}</div>
+            {/* <div>{optimisticTodos.id}</div> */}
             <div>{formatDate(optimisticTodos.dueDate)}</div>
             <UpdateDueDateButton todo={props.todo} />
             <DeleteTodoButton todoId={props.todo.id} />
           </div>
+        </div>
+        <div className="flex justify-between items-center mt-2">
+          <Input placeholder="Add a comment..." className="mt-2" onChange={(e) => setCommentContent(e.target.value)} />
+          <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button>
+        </div>
+        <div>
+          {optimisticComments.length > 0 ? (
+            <div className="mt-2">
+              {optimisticComments.map((comment) => (
+                <div key={comment.id} className="border-b border-gray-200 py-2">
+                  <p>{comment.content}</p>
+                  <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 mt-2">No comments yet.</p>
+          )}
         </div>
 
       </div>

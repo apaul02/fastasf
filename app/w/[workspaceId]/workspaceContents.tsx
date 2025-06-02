@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { createWorkspaceAction, deleteWorkspaceAction, updateDueDateAction } from "@/lib/actions"
-import { TodosType, workspaceType } from "@/lib/types"
+import { commentsType, TodosType, workspaceType } from "@/lib/types"
 import { Loader2, Plus, Trash2, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
@@ -14,7 +14,7 @@ import { z } from "zod"
 import { add, endOfDay, isBefore, isToday, parse, format } from "date-fns"
 import { authClient } from "@/lib/auth-client"
 import { TodoCard } from "./newTodoCard"
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -26,7 +26,7 @@ const getStartOfDay = (date: Date) => {
   return newDate;
 }
 
-export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[]}) {
+export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[]}) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
@@ -48,6 +48,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   useEffect(() => {
     setOptimisticTodos(props.todos);
   }, [props.todos]);
+
 
   const handleWorkspaceChange = (workspaceId: string) => {
     if (workspaceId === activeWorkspaceId) return;
@@ -171,7 +172,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       setOptimisticTodos(prev => prev.filter(todo => todo.id !== todoId));
     }
 
-    const handleDragEnd = async (result: any) => {
+    const handleDragEnd = async (result: DropResult) => {
       if (!result.destination) {
         return;
       }
@@ -371,7 +372,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} />
+                              <TodoCard todo={todo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>
@@ -399,7 +400,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} />
+                              <TodoCard todo={todo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>
@@ -427,7 +428,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} />
+                              <TodoCard todo={todo} comments={props.comments.filter((comment) => comment.todoId === todo.id)} />
                             </div>
                           )}
                         </Draggable>

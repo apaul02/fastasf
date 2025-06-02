@@ -35,10 +35,10 @@ export type TodosType = typeof todos.$inferSelect;
 export type workspaceType = typeof workspace.$inferSelect;
 export type commentsType = typeof comments.$inferSelect;
 
-export type CategoryType = {
-  id: string;
-  title: string;
-  todos: TodosType[];
-  bgColorClass: string;
-  emptyMessage: string
-}
+// export type CategoryType = {
+//   id: string;
+//   title: string;
+//   todos: TodosType[];
+//   bgColorClass: string;
+//   emptyMessage: string
+// }

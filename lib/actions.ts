@@ -171,3 +171,27 @@ export async function deleteWorkspaceAction(workspaceId: string) {
     return { success: false, error: "Server error when deleting workspace", workspaceId: null }
   }
 }
+
+export async function createCommentAction(todoId: string, content: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    return {success: false, error: "User not authenticated", commentId: null }
+  }
+
+  const userId = session.user.id;
+
+  try {
+    const newComment = await MUTATIONS.createComment(todoId, userId, content);
+    if(!newComment || !newComment.id) {
+      return { success: false, error: "Failed to create comment", commentId: null }
+    }
+    
+    return { success: true, commentId: newComment.id }
+  } catch (error) {
+    console.error("Error in createCommentAction:", error);
+    return { success: false, error: "Server error when creating comment", commentId: null }
+  }
+}

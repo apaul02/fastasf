@@ -37,6 +37,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   const [commentContent, setCommentContent] = useState("");
   const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
   const router = useRouter();
+  
 
   useEffect(() => {
     setOptimisticComments(props.comments);
@@ -136,7 +137,12 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
             placeholder="Add a comment..." 
             className="mt-2" 
             value={commentContent}
-            onChange={(e) => setCommentContent(e.target.value)} 
+            onChange={(e) => setCommentContent(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleCommentSubmit();
+              }
+            }}
           />
           <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button>
         </div>

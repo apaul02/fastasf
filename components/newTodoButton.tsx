@@ -364,6 +364,14 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
                         <Calendar
                           mode="single"
                           selected={selectedDate}
+                          // captionLayout="dropdown"
+                          disabled= {(date) => {
+                            const today = new Date()
+                            today.setHours(0, 0, 0, 0)
+                            const compareDate = new Date(date)
+                            compareDate.setHours(0, 0, 0, 0)
+                            return compareDate < today
+                          }}
                           onSelect={(date) => {
                             if (date) {
                               setSelectedDate(date)

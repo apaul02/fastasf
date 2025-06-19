@@ -15,6 +15,7 @@ import { add, endOfDay, isBefore, isToday, parse, format } from "date-fns"
 import { authClient } from "@/lib/auth-client"
 import { TodoCard } from "./newTodoCard"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
+import { ModeToggle } from "@/components/toggle-button"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -344,6 +345,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         <div>
         </div>
         <div>
+          <ModeToggle />
           <Button variant="ghost" size="icon" className="rounded-full" aria-label="User profile">
             <User className="h-5 w-5" />
           </Button>

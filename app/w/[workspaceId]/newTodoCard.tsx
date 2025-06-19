@@ -10,6 +10,13 @@ import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
 import { ArrowBigUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
+});
 
 
 function isBeforeNextSevenDays(date: Date) {
@@ -117,7 +124,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   }
   return (
     <div>
-      <div className={`bg-white shadow-md rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
+      <div className={`border-3 ${poppins.className} border-blue-500 shadow-md shadow-blue-500/50 hover:shadow-blue-700/70 rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
         <div className="flex items-center">
           <Checkbox
             checked={props.todo.completed}

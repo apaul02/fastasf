@@ -192,9 +192,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
 
       switch (dropZoneId) {
         case "overdueTodayNoDateTodos":
-          // Set to today with time 1 hour later of current time
-          const todayWithOneHour = add(now, { hours: 1 });
-          newDueDate = format(todayWithOneHour, "yyyy-MM-dd'T'HH:mm:ss");
+          // Set to current time to ensure it stays in today category
+          newDueDate = format(now, "yyyy-MM-dd'T'HH:mm:ss");
           break;
           
         case "nextSevenDaysTodos":
@@ -244,7 +243,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   return (
     <div className="flex flex-col min-h-screen">
       {/* Topbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b">
+      <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 py-2 border-b">
         <div className="font-semibold text-lg">yep-done: {props.currentWorkspace.name}</div>
         <div>
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
@@ -370,6 +369,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
+                      className={`min-h-[200px] p-2 rounded-lg transition-colors 
+                      }`}
                     >
                       {categorizeTodos.find(cat => cat.id === "overdueTodayNoDateTodos")?.todos.map((todo, index) => (
                         <Draggable key={todo.id} draggableId={todo.id} index={index}>
@@ -398,6 +399,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
+                      className={`min-h-[200px] p-2 rounded-lg transition-colors 
+                      }`}
                     >
                       {categorizeTodos.find(cat => cat.id === "nextSevenDaysTodos")?.todos.map((todo, index) => (
                         <Draggable key={todo.id} draggableId={todo.id} index={index}>
@@ -426,6 +429,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
+                      className={`min-h-[200px] p-2 rounded-lg transition-colors 
+                      }`}
                     >
                       {categorizeTodos.find(cat => cat.id === "upcomingTodosList")?.todos.map((todo, index) => (
                         <Draggable key={todo.id} draggableId={todo.id} index={index}>

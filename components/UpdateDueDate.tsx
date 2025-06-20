@@ -10,7 +10,7 @@ import { TodosType } from "@/lib/types";
 import { format, parse } from "date-fns";
 import { Input } from "./ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, TimerResetIcon } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { extractDateFromTitle } from "./newTodoButton";
 import { updateDueDateAction } from "@/lib/actions";
@@ -79,8 +79,8 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={"outline"}>
-          Update Due date
+        <Button variant={"ghost"} size={"icon"}>
+          <TimerResetIcon />
         </Button>
       </DialogTrigger>
       <DialogContent>

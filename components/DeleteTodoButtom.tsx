@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "./ui/button";
 import { deleteTodoAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
+import { Trash2Icon } from "lucide-react";
 
 export function DeleteTodoButton(props: { todoId: string}) {
   const [open, setOpen] = useState(false);
@@ -29,7 +30,7 @@ export function DeleteTodoButton(props: { todoId: string}) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={"outline"}>Delete Todo</Button>
+        <Button variant={"ghost"} size={"icon"}><Trash2Icon color="#ff0000" /></Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>

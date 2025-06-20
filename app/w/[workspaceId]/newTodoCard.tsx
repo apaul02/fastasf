@@ -7,7 +7,7 @@ import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { createCommentAction, deleteCommentAction, markTodoAction } from "@/lib/actions";
 import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
-import { ArrowBigUp, Trash2 } from "lucide-react";
+import { ArrowBigUp, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Poppins } from "next/font/google";
@@ -43,6 +43,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   const [isVisible, setIsVisible] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
+  const [showComments, setShowComments] = useState(false);
   const router = useRouter();
   
 
@@ -125,51 +126,70 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   return (
     <div>
       <div className={`border-3 ${poppins.className} border-blue-500 shadow-md shadow-blue-500/50 hover:shadow-blue-700/70 rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
-        <div className="flex items-center">
-          <Checkbox
+        <div className="flex items-start">
+          <div>
+            <Checkbox
             checked={props.todo.completed}
             onCheckedChange={handleTodoChange}
-            className="mr-2"
-          />
-          <div>
-            <div>{props.todo.title}</div>
-            <div>{props.todo.id}</div>
-            <div>{formatDate(props.todo.dueDate)}</div>
-            <UpdateDueDateButton todo={props.todo} />
-            <DeleteTodoButton todoId={props.todo.id} />
+            className="mr-2 mt-1 w-5 h-5"
+            />
+          </div>
+          <div className="flex justify-between w-full">
+            <div>
+              <div className="text-lg font-semibold">{props.todo.title}</div>
+              <div className="text-slate-500">{formatDate(props.todo.dueDate)}</div>
+            </div>
+            <div className="flex">
+              <UpdateDueDateButton todo={props.todo} />
+              <DeleteTodoButton todoId={props.todo.id} />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowComments(!showComments)}
+                className="text-gray-600 hover:text-gray-800 ml-1"
+              >
+                {showComments ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {/* <span className="text-xs ml-1">({optimisticComments.length})</span> */}
+              </Button>
+            </div>
           </div>
         </div>
-        <div className="flex justify-between items-center mt-2">
-          <Input 
-            placeholder="Add a comment..." 
-            className="mt-2" 
-            value={commentContent}
-            onChange={(e) => setCommentContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleCommentSubmit();
-              }
-            }}
-          />
-          <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button>
-        </div>
-        <div>
-          {optimisticComments.length > 0 ? (
-            <div className="mt-2">
-              {optimisticComments.map((comment) => (
-                <div key={comment.id} className="border-b border-gray-200 py-2">
-                  <p>{comment.content}</p>
-                  <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
-                  <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleDeleteComment(comment.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
+
+        {showComments && (
+          <>
+            <div className="flex justify-between items-center mt-2">
+              <Input 
+                placeholder="Add a comment..." 
+                className="mt-2 w-full border-0  shadow-none focus:ring-0 " 
+                value={commentContent}
+                onChange={(e) => setCommentContent(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleCommentSubmit();
+                  }
+                }}
+              />
+              {/* <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button> */}
             </div>
-          ) : (
-            <p className="text-gray-500 mt-2">No comments yet.</p>
-          )}
-        </div>
+            <div>
+              {optimisticComments.length > 0 ? (
+                <div className="mt-2">
+                  {optimisticComments.map((comment) => (
+                    <div key={comment.id} className="border-b border-gray-200 py-2">
+                      <p>{comment.content}</p>
+                      <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
+                      <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleDeleteComment(comment.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 mt-2">No comments yet.</p>
+              )}
+            </div>
+          </>
+        )}
 
       </div>
     </div>

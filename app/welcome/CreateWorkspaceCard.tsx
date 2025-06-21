@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createWorkspaceAction, onBoardUserAction } from "@/lib/actions";
+import { createWorkspaceAction } from "@/lib/actions";
 import { z } from "zod";
 import { useState } from "react";
 
@@ -53,7 +53,14 @@ export function CreateWorkspaceCard() {
         <div className="flex flex-col space-y-2">
           <Label>Workspace Name</Label>
           <Input placeholder="Name of your workspace" onChange={(e) => setWorkspaceName(e.target.value) }></Input>  
-          <Button onClick={handleCreateWorkspace} disabled={isLoading}>Create workspce</Button>
+          {error && (
+            <div className="text-red-500 text-sm">
+              {error}
+            </div>
+          )}
+          <Button onClick={handleCreateWorkspace} disabled={isLoading}>
+            {isLoading ? "Creating..." : "Create workspace"}
+          </Button>
         </div>
       </CardContent>
     </Card>

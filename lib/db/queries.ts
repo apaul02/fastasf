@@ -3,7 +3,6 @@ import { db } from ".";
 import { v4 as uuidv4 } from "uuid";
 import { comments, todos, workspace } from "./schema";
 import { eq, sql } from "drizzle-orm";
-import { create } from "domain";
 
 export const MUTATIONS = {
   createWorkspace: async function (userId: string, name: string) {

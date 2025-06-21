@@ -1,15 +1,12 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { onBoardUserAction } from "@/lib/actions";
 import { authClient } from "@/lib/auth-client";
 import { Github } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function GithubLoginButton() {
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useRouter();
 
   const handleLogin = async () => {
     setIsLoading(true);

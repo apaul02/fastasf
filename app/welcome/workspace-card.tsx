@@ -5,6 +5,7 @@ import { workspaceType } from "@/lib/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
+import { Loader2 } from "lucide-react";
 
 export function WorkspaceCard(props: { workspace: workspaceType[] }) {
   const navigate = useRouter();
@@ -20,15 +21,16 @@ export function WorkspaceCard(props: { workspace: workspaceType[] }) {
               })
             }}
             >
-            <Card className="w-full max-w-md" key={space.id}>
+            <Card className={`w-full max-w-md transition-opacity ${isPending ? 'opacity-50 cursor-wait' : 'hover:shadow-md'}`} key={space.id}>
               <CardHeader>
-                <CardTitle>
+                <CardTitle className="flex items-center">
                   {space.name}
+                  {isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col space-y-2">
-                  <p>{space.name}</p>
+                  <p>{isPending ? "Loading..." : space.name}</p>
                 </div>
               </CardContent>
             </Card>

@@ -1,5 +1,4 @@
 import { GithubLoginButton } from "@/components/GithubLoginButton";
-import { LoginButton } from "@/components/LoginButton";
 import { onBoardUserAction } from "@/lib/actions";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";

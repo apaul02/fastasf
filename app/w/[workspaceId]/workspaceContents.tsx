@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { createWorkspaceAction, deleteWorkspaceAction, updateDueDateAction } from "@/lib/actions"
 import { commentsType, TodosType, workspaceType } from "@/lib/types"
-import { Loader2, Plus, Trash2, User, User2 } from "lucide-react"
+import { Loader2, Plus, Trash2, User2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
@@ -307,7 +307,21 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               <DialogHeader>
                 <DialogTitle>Create a new workspace</DialogTitle>
                 <Input placeholder="Name of your new workspace" onChange={(e) => setWorkspaceName(e.target.value)} />
-                <Button onClick={handleCreateWorkspace}>Create</Button>
+                {error && (
+                  <div className="text-red-500 text-sm mt-2">
+                    {error}
+                  </div>
+                )}
+                <Button disabled={isLoading} onClick={handleCreateWorkspace}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create"
+                  )}
+                </Button>
               </DialogHeader>
             </DialogContent>
           </Dialog>
@@ -378,7 +392,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               <h2 className="text-xl text-center font-bold mb-2">Overdue & Today</h2>
               <div>
                 <Droppable droppableId="overdueTodayNoDateTodos">
-                  {(provided, snapshot) => (
+                  {(provided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
@@ -387,7 +401,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     >
                       {categorizeTodos.find(cat => cat.id === "overdueTodayNoDateTodos")?.todos.map((todo, index) => (
                         <Draggable key={todo.id} draggableId={todo.id} index={index}>
-                          {(provided, snapshot) => (
+                          {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
@@ -408,7 +422,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               <h2 className="text-xl text-center font-bold mb-2">Next 7 Days</h2>
               <div>
                 <Droppable droppableId="nextSevenDaysTodos">
-                  {(provided, snapshot) => (
+                  {(provided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
@@ -417,7 +431,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     >
                       {categorizeTodos.find(cat => cat.id === "nextSevenDaysTodos")?.todos.map((todo, index) => (
                         <Draggable key={todo.id} draggableId={todo.id} index={index}>
-                          {(provided, snapshot) => (
+                          {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}
@@ -438,7 +452,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               <h2 className="text-xl text-center font-bold mb-2">Upcoming</h2>
               <div>
                 <Droppable droppableId="upcomingTodosList">
-                  {(provided, snapshot) => (
+                  {(provided) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.droppableProps}
@@ -447,7 +461,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     >
                       {categorizeTodos.find(cat => cat.id === "upcomingTodosList")?.todos.map((todo, index) => (
                         <Draggable key={todo.id} draggableId={todo.id} index={index}>
-                          {(provided, snapshot) => (
+                          {(provided) => (
                             <div
                               ref={provided.innerRef}
                               {...provided.draggableProps}

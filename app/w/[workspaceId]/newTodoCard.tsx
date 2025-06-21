@@ -7,7 +7,7 @@ import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { createCommentAction, deleteCommentAction, markTodoAction } from "@/lib/actions";
 import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
-import { ArrowBigUp, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 

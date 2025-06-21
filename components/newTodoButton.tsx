@@ -10,7 +10,7 @@ import { Input } from "./ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Calendar } from "./ui/calendar"
 import { CalendarIcon } from "lucide-react"
-import { format, isValid, parse, addDays } from "date-fns"
+import { format, isValid, addDays } from "date-fns"
 import { 
   Select,
   SelectContent,
@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "./ui/select"
-import { cn } from "@/lib/utils"
 import { DialogTitle } from "@radix-ui/react-dialog"
 import { createTodoAction } from "@/lib/actions"
 import { TodosType } from "@/lib/types"

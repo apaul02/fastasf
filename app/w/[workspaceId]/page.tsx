@@ -23,7 +23,7 @@ export default async function WorkspacePage(props: { params: Promise<{workspaceI
   ]);
   return (
     <main>
-      <WorkspaceContents workspaces={allWorkspaces} currentWorkspace={currentWorkspace} todos={todos} comments={comments} />
+      <WorkspaceContents workspaces={allWorkspaces} currentWorkspace={currentWorkspace} todos={todos} comments={comments} image={session.user.image} />
     </main>
   )
 

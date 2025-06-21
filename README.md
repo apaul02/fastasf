@@ -25,3 +25,10 @@
 
 - [ ] Loaders
 - [ ] Better error handling
+- [ ] need to fix a style
+- [x] cards
+- [ ] columns
+- [ ] top bar
+- [ ] new todo button 
+- [ ] toast
+- [ ] animation

@@ -10,13 +10,7 @@ import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
 import { ArrowBigUp, ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Poppins } from "next/font/google";
 
-const poppins = Poppins({
-  variable: "--font-poppins",
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-});
 
 
 function isBeforeNextSevenDays(date: Date) {
@@ -125,7 +119,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   }
   return (
     <div>
-      <div className={`border-3 ${poppins.className} border-blue-500 shadow-md shadow-blue-500/50 hover:shadow-blue-700/70 rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
+      <div className={`border-3  rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
         <div className="flex items-start">
           <div>
             <Checkbox
@@ -137,7 +131,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
           <div className="flex justify-between w-full">
             <div>
               <div className="text-lg font-semibold">{props.todo.title}</div>
-              <div className="text-slate-500">{formatDate(props.todo.dueDate)}</div>
+              <div className=" text-slate-500 text-sm">{formatDate(props.todo.dueDate)}</div>
             </div>
             <div className="flex">
               <UpdateDueDateButton todo={props.todo} />
@@ -175,12 +169,14 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
               {optimisticComments.length > 0 ? (
                 <div className="mt-2">
                   {optimisticComments.map((comment) => (
-                    <div key={comment.id} className="border-b border-gray-200 py-2">
+                    <div key={comment.id} className=" py-2">
                       <p>{comment.content}</p>
-                      <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
-                      <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleDeleteComment(comment.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                        <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
+                        <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleDeleteComment(comment.id)}>
+                          <Trash2 color="#ff0000" className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

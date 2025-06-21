@@ -7,7 +7,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Input } from "@/components/ui/input"
 import { createWorkspaceAction, deleteWorkspaceAction, updateDueDateAction } from "@/lib/actions"
 import { commentsType, TodosType, workspaceType } from "@/lib/types"
-import { Loader2, Plus, Trash2, User } from "lucide-react"
+import { Loader2, Plus, Trash2, User, User2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo } from "react"
 import { z } from "zod"
@@ -16,6 +16,7 @@ import { authClient } from "@/lib/auth-client"
 import { TodoCard } from "./newTodoCard"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 import { ModeToggle } from "@/components/toggle-button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -27,7 +28,7 @@ const getStartOfDay = (date: Date) => {
   return newDate;
 }
 
-export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[]}) {
+export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[], image?: string | null}) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
@@ -244,69 +245,95 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
     <div className="flex flex-col min-h-screen">
       {/* Topbar */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 py-2 border-b">
-        <div className="font-semibold text-lg">yep-done: {props.currentWorkspace.name}</div>
-        <div>
+        <div className="font-semibold text-lg">yep-done</div>
+        
+        <div className="flex items-center gap-3">
+          <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete} />
+          
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
-          <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+            <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button variant={"outline"} disabled={isNavigating}>
+                  {isNavigating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Switching...
+                    </>
+                  ) : (
+                    props.currentWorkspace.name
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                {props.workspaces.map((workspace) => (
+                  <div key={workspace.id} className="flex justify-between ">
+                    
+                    <DropdownMenuItem 
+                      key={workspace.id}
+                      onClick={() => handleWorkspaceChange(workspace.id)}
+                      disabled={isNavigating}
+                      className="w-full"
+                    >
+                      {workspace.name}
+                      {isNavigating && activeWorkspaceId === workspace.id && (
+                        <Loader2 className="ml-2 h-4 w-4 animate-spin" />
+                      )}
+                    </DropdownMenuItem>
+                    {props.workspaces.indexOf(workspace) !== 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="rounded-full"
+                        onClick={(e) => {
+                          e.stopPropagation(); 
+                          setWorkspaceToDelete(workspace.id);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <DialogTrigger asChild>
+                  <DropdownMenuItem>
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Workspace
+                  </DropdownMenuItem>
+                </DialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create a new workspace</DialogTitle>
+                <Input placeholder="Name of your new workspace" onChange={(e) => setWorkspaceName(e.target.value)} />
+                <Button onClick={handleCreateWorkspace}>Create</Button>
+              </DialogHeader>
+            </DialogContent>
+          </Dialog>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <ModeToggle />
+          <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant={"outline"} disabled={isNavigating}>
-                {isNavigating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Switching...
-                  </>
-                ) : (
-                  props.currentWorkspace.name
-                )}
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="User profile">
+                <Avatar className="cursor-pointer">
+                  <AvatarImage src={props.image || undefined} alt="User Avatar" />
+                  <AvatarFallback><User2 /></AvatarFallback>
+                </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {props.workspaces.map((workspace) => (
-                <div key={workspace.id} className="flex justify-between ">
-                  
-                  <DropdownMenuItem 
-                    key={workspace.id}
-                    onClick={() => handleWorkspaceChange(workspace.id)}
-                    disabled={isNavigating}
-                    className="w-full"
-                  >
-                    {workspace.name}
-                    {isNavigating && activeWorkspaceId === workspace.id && (
-                      <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                    )}
-                  </DropdownMenuItem>
-                  {props.workspaces.indexOf(workspace) !== 0 && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="rounded-full"
-                      onClick={(e) => {
-                        e.stopPropagation(); 
-                        setWorkspaceToDelete(workspace.id);
-                        setIsDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <DialogTrigger asChild>
-                <DropdownMenuItem>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Workspace
-                </DropdownMenuItem>
-              </DialogTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => {authClient.signOut({
+                fetchOptions: {
+                  onSuccess: () => router.push("/"),
+                }
+              })}}>
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create a new workspace</DialogTitle>
-              <Input placeholder="Name of your new workspace" onChange={(e) => setWorkspaceName(e.target.value)} />
-              <Button onClick={handleCreateWorkspace}>Create</Button>
-            </DialogHeader>
-          </DialogContent>
-          </Dialog>
         </div>
         
         {/* Separate Dialog for workspace deletion */}
@@ -341,28 +368,14 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
             </div>
           </DialogContent>
         </Dialog>
-        <div>
-        </div>
-        <div>
-          <ModeToggle />
-          <Button variant="ghost" size="icon" className="rounded-full" aria-label="User profile">
-            <User className="h-5 w-5" />
-          </Button>
-          <Button onClick={() => {authClient.signOut({
-            fetchOptions: {
-              onSuccess: () => router.push("/"),
-            }
-          })}}>Signout</Button>
-        </div>
       </div>
       
       {/* Main content */}
       <div className="flex-1 p-4">
-        <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete} />
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex justify-between gap-20">
             <div className="flex flex-col w-1/3">
-              <h2 className="text-lg font-semibold mb-2">Overdue / Today</h2>
+              <h2 className="text-xl text-center font-bold mb-2">Overdue & Today</h2>
               <div>
                 <Droppable droppableId="overdueTodayNoDateTodos">
                   {(provided, snapshot) => (
@@ -392,7 +405,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               </div>
             </div>
             <div className="flex flex-col w-1/3">
-              <h2 className="text-lg font-semibold mb-2">Next 7 Days</h2>
+              <h2 className="text-xl text-center font-bold mb-2">Next 7 Days</h2>
               <div>
                 <Droppable droppableId="nextSevenDaysTodos">
                   {(provided, snapshot) => (
@@ -422,7 +435,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               </div>
             </div>
             <div className="flex flex-col w-1/3">
-              <h2 className="text-lg font-semibold mb-2">Upcoming</h2>
+              <h2 className="text-xl text-center font-bold mb-2">Upcoming</h2>
               <div>
                 <Droppable droppableId="upcomingTodosList">
                   {(provided, snapshot) => (

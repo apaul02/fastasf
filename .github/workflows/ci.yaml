@@ -34,3 +34,6 @@ jobs:
       run: pnpm build
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+        GITHUB_CLIENT_ID: ${{ secrets.GH_CLIENT_ID }}
+        GITHUB_CLIENT_SECRET: ${{ secrets.GH_CLIENT_SECRET }}

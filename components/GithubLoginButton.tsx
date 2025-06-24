@@ -5,7 +5,7 @@ import { authClient } from "@/lib/auth-client";
 import { Github } from "lucide-react";
 import { useState } from "react";
 
-export function GithubLoginButton() {
+export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -41,8 +41,7 @@ export function GithubLoginButton() {
     } catch (error) {
       console.error("GitHub login failed:", error);
       //TODO: Show error message to user
-    } finally {
-      setIsLoading(false); 
+      setIsLoading(false);
     }
   };
 
@@ -52,6 +51,7 @@ export function GithubLoginButton() {
       className="relative w-full overflow-hidden bg-white text-black border-[#24292F] hover:bg-[#f6f8fa] hover:border-[#1b1f23] dark:bg-[#24292F] dark:text-white dark:hover:bg-[#2f363d] transition-all duration-300"
       onClick={handleLogin}
       disabled={isLoading}
+      {...props}
     >
       <div className="absolute inset-0 bg-gradient-to-r from-[#2463eb]/10 via-transparent to-[#2463eb]/10 opacity-0 hover:opacity-100 transition-all duration-300" />
       <Github className="size-5 mr-2" />

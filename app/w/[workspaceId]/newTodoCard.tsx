@@ -128,12 +128,12 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
             className="mr-2 mt-1 w-5 h-5"
             />
           </div>
-          <div className="flex justify-between w-full">
+          <div className="flex flex-col sm:flex-row justify-between w-full">
             <div>
               <div className="text-lg font-semibold">{props.todo.title}</div>
               <div className=" text-slate-500 text-sm">{formatDate(props.todo.dueDate)}</div>
             </div>
-            <div className="flex">
+            <div className="flex mt-2 sm:mt-0">
               <UpdateDueDateButton todo={props.todo} />
               <DeleteTodoButton todoId={props.todo.id} />
               <Button 
@@ -171,9 +171,9 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
                   {optimisticComments.map((comment) => (
                     <div key={comment.id} className=" py-2">
                       <p>{comment.content}</p>
-                      <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-500 mt-1">
                         <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
-                        <Button variant="ghost" size="icon" className="ml-2" onClick={() => handleDeleteComment(comment.id)}>
+                        <Button variant="ghost" size="icon" className="ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteComment(comment.id)}>
                           <Trash2 color="#ff0000" className="h-4 w-4" />
                         </Button>
                       </div>

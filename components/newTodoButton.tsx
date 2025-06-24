@@ -333,7 +333,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
       <DialogTrigger asChild>
         <Button variant={"default"}>New Todo</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader className="text-xl font-semibold mb-4">
           <DialogTitle>Create a new task</DialogTitle>
         </DialogHeader>
@@ -345,18 +345,19 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Title</FormLabel>
-                  <div className="flex items-center gap-2">
+                  <div className="space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
                     <FormControl>
                       <Input 
-                        placeholder="Enter todo title (e.g. 'Take out trash tomorrow at 2pm')" 
+                        placeholder="e.g. 'Take out trash tomorrow at 2pm'" 
                         className="w-full"
                         {...field} 
                       />
                     </FormControl>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon">
-                          <CalendarIcon className="h-4 w-4" />
+                        <Button variant="outline" className="w-full sm:w-auto">
+                          <CalendarIcon className="h-4 w-4 mr-2" />
+                          Set Date
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">

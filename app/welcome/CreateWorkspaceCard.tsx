@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { createWorkspaceAction } from "@/lib/actions";
 import { z } from "zod";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -30,14 +31,29 @@ export function CreateWorkspaceCard() {
       if(response.success) {
         console.log("Workspace created successfully:", response.workspaceId);
         setWorkspaceName("");
+        toast.success("Workspace created successfully", {
+          description: "Your workspace has been created.",
+          duration: 3000,
+          dismissible: true,
+        });
         
       }else {
-        console.log(response.error)
+        console.log(response.error);
+        toast.error("Failed to create workspace", {
+          description: response.error || "An error occurred while creating the workspace.",
+          duration: 3000,
+          dismissible: true,
+        });
       }
       
     }catch(err) {
       console.error("Error creating workspace:", err);
       setError("Failed to create workspace. Please try again.");
+      toast.error("Failed to create workspace", {
+        description: "An error occurred while creating the workspace. Please try again.",
+        duration: 3000,
+        dismissible: true,
+      });
     }finally {
       setIsLoading(false);
     }

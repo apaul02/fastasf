@@ -10,6 +10,7 @@ import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 
 
@@ -33,7 +34,7 @@ function formatDate(date: string | null) {
   }
 }
 
-export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: TodosType) => void, comments: commentsType[]}) {
+export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: TodosType) => void, comments: commentsType[], optimisticDeleteTodo: (todoId: string) => void }) {
   const [isVisible, setIsVisible] = useState(true);
   const [commentContent, setCommentContent] = useState("");
   const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
@@ -102,9 +103,19 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
       const response = await markTodoAction(props.todo.id);
       if (response.success) {
         console.log("Todo marked successfully:", response.todoId);
+        toast.success("Todo marked successfully", {
+          description: `Todo "${props.todo.title}" has been marked as completed.`,
+          duration: 3000,
+          dismissible: true,
+        });
       } else {
         console.error("Error marking todo:", response.error);
         props.optimisticMarkTodo(props.todo);
+        toast.error("Failed to mark todo", {
+          description: response.error || "An error occurred while marking the todo.",
+          duration: 3000,
+          dismissible: true,
+        });
         setIsVisible(true); 
       }
     } catch (error) {
@@ -135,7 +146,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
             </div>
             <div className="flex mt-2 sm:mt-0">
               <UpdateDueDateButton todo={props.todo} />
-              <DeleteTodoButton todoId={props.todo.id} />
+              <DeleteTodoButton todoId={props.todo.id} optimisticDeleteTodo={props.optimisticDeleteTodo} />
               <Button 
                 variant="ghost" 
                 size="icon" 

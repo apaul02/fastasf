@@ -15,6 +15,7 @@ import { Calendar } from "./ui/calendar";
 import { extractDateFromTitle } from "./newTodoButton";
 import { updateDueDateAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 const updateDueDateSchema = z.object({
   dueDate: z.date().optional(),
@@ -58,9 +59,23 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
         props.todo.id,
         format(data.dueDate, "yyyy-MM-dd'T'HH:mm:ss")
       );
+      if(response.success) {
+        console.log("Due date updated successfully:", response.todoId);
+        router.refresh();
+        toast.success("Due date updated successfully", {
+          description: `Due date for "${props.todo.title}" has been updated.`,
+          duration: 3000,
+          dismissible: true,
+        });
+      }else {
+        console.error("Error updating due date:", response.error);
+        toast.error("Failed to update due date", {
+          description: response.error || "An error occurred while updating the due date.",
+          duration: 3000,
+          dismissible: true,
+        })
+      }
       
-      console.log("Due date updated", response);
-      router.refresh();
       
       setTimeout(() => {
         form.reset({
@@ -73,6 +88,11 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
       return data;
     } catch (error) {
       console.error("Error updating due date:", error);
+      toast.error("Failed to update due date", {
+        description: "An error occurred while updating the due date. Please try again.",
+        duration: 3000,
+        dismissible: true,
+      });
     }
   });
 

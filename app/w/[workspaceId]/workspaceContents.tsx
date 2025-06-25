@@ -17,6 +17,7 @@ import { TodoCard } from "./newTodoCard"
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd"
 import { ModeToggle } from "@/components/toggle-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { toast } from "sonner"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -87,14 +88,29 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
           setWorkspaceName("");
           router.push(`/w/${response.workspaceId}`);
           setIsNewWorkspaceDialogOpen(false);
+          toast.success("Workspace created successfully", {
+            description: "Your workspace has been created.",
+            duration: 3000,
+            dismissible: true,
+          });
           
         }else {
           console.log(response.error)
+          toast.error("Failed to create workspace", {
+            description: response.error || "An error occurred while creating the workspace.",
+            duration: 3000,
+            dismissible: true,
+          });
         }
         
       }catch(err) {
         console.error("Error creating workspace:", err);
         setError("Failed to create workspace. Please try again.");
+        toast.error("Failed to create workspace", {
+          description: "An error occurred while creating the workspace. Please try again.",
+          duration: 3000,
+          dismissible: true,
+        });
       }finally {
         setIsLoading(false);
       }
@@ -166,11 +182,26 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
             router.push(`/w/${props.workspaces[0].id}`);
           }
           router.refresh();
+          toast.success("Workspace deleted successfully", {
+            description: "Your workspace has been removed.",
+            duration: 3000,
+            dismissible: true,
+          });
         }else {
           console.log(response.error)
+          toast.error("Failed to delete workspace", {
+            description: response.error || "An error occurred while deleting the workspace.",
+            duration: 3000,
+            dismissible: true,
+          });
         }
       }catch(err) {
         console.error("Error deleting workspace:", err);
+        toast.error("Failed to delete workspace", {
+          description: "An error occurred while deleting the workspace. Please try again.",
+          duration: 3000,
+          dismissible: true,
+        });
       }finally {
         setIsDeleteDialogOpen(false);
         setIsDropdownOpen(false);
@@ -417,7 +448,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
+                              <TodoCard todo={todo} optimisticDeleteTodo={handleOptimisticTodoDelete} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>
@@ -447,7 +478,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
+                              <TodoCard todo={todo} optimisticDeleteTodo={handleOptimisticTodoDelete} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>
@@ -477,7 +508,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                             >
-                              <TodoCard todo={todo} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
+                              <TodoCard todo={todo} optimisticDeleteTodo={handleOptimisticTodoDelete} optimisticMarkTodo={handleMarkTodo} comments={props.comments.filter((comment) => comment.todoId === todo.id)}  />
                             </div>
                           )}
                         </Draggable>

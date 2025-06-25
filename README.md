@@ -5,6 +5,7 @@
 - [ ] make it fast
 - [ ] ui revamp(major)
 - [ ] invite members to a workspace
+- [x] delete todo can be faster
 
 ## UI REDO
 
@@ -14,3 +15,4 @@
 - [ ] toast
 - [ ] animation 
 - [ ] better landing page
+- [ ] add keyboard shortcuts

@@ -6,23 +6,42 @@ import { Button } from "./ui/button";
 import { deleteTodoAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { Trash2Icon } from "lucide-react";
+import { toast } from "sonner";
 
-export function DeleteTodoButton(props: { todoId: string}) {
+export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: (todoId: string) => void }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
   const handleDeleteTodo = async () => {
     try {
+      props.optimisticDeleteTodo(props.todoId);
       const response = await deleteTodoAction(props.todoId);
       if (response.success) {
         console.log("Todo deleted successfully:", response.todoId);
         router.refresh();
+        toast.success("Todo deleted successfully", {
+          description: "The todo has been removed.",
+          duration: 3000,
+          dismissible: true,
+          })
         
       } else {
         console.error("Error deleting todo:", response.error);
+        toast.error("Failed to delete todo", {
+          description: response.error || "An error occurred while deleting the todo.",
+          duration: 3000,
+          dismissible: true,
+        });
+        props.optimisticDeleteTodo(props.todoId); // Revert optimistic update
       }
     }catch (error) {
       console.error("Error deleting todo:", error);
+      toast.error("Failed to delete todo", {
+        description: "An error occurred while deleting the todo. Please try again.",
+        duration: 3000,
+        dismissible: true,
+      });
+      props.optimisticDeleteTodo(props.todoId); 
     }finally {
       setOpen(false);
     }

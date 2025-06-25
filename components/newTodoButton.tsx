@@ -21,6 +21,7 @@ import {
 import { DialogTitle } from "@radix-ui/react-dialog"
 import { createTodoAction } from "@/lib/actions"
 import { TodosType } from "@/lib/types"
+import { toast } from "sonner"
 
 const todoSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title should be less than 100 characters"),
@@ -270,7 +271,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
     try {
       // Create optimistic todo
       const optimisticTodo = {
-        id: `temp-${Date.now()}`, // Temporary ID
+        id: `temp-${Date.now()}`, 
         title: formattedData.title,
         priority: formattedData.priority,
         workspaceId: formattedData.workspaceId,
@@ -278,7 +279,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
         completed: false,
         createdAt: new Date(),
         updatedAt: new Date(),
-        userId: "", // Will be filled by server
+        userId: "", 
       }
 
       // Optimistically add the todo
@@ -296,13 +297,21 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
       console.log("Todo created", response)
       
       if (response.success) {
-        // Update with real ID from server if needed
-        // The server response will trigger a refresh through the useEffect in parent
+        toast.success("New todo created successfully!", {
+          description: `Todo "${formattedData.title}" has been created.`,
+          duration: 3000,
+          dismissible: true
+        })
       } else {
         // Handle error - you might want to remove the optimistic todo here
         if(props.onOptimisticTodoDelete) {
           props.onOptimisticTodoDelete(optimisticTodo.id);
         }
+        toast.error("Failed to create todo", {
+          description: response.error || "An error occurred while creating the todo.",
+          duration: 3000,
+          dismissible: true
+        })
         console.error("Failed to create todo:", response.error);
       }
       
@@ -313,6 +322,11 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
       return formattedData
     } catch (error) {
       console.error("Error creating todo:", error)
+      toast.error("Failed to create todo", {
+        description: "An error occurred while creating the todo. Please try again.",
+        duration: 3000,
+        dismissible: true
+      })
     }
   })
   

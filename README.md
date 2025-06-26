@@ -6,6 +6,8 @@
 - [ ] ui revamp(major)
 - [ ] invite members to a workspace
 - [x] delete todo can be faster
+- [ ] priority
+
 
 ## UI REDO
 

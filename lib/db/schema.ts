@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
        id: text('id').primaryKey(),
@@ -64,7 +64,10 @@ export const todos = pgTable("todos", {
        updatedAt: timestamp('updated_at').notNull().defaultNow(),
        workspaceId: text('workspace_id').notNull().references(()=> workspace.id, { onDelete: 'cascade' }),
        userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' })
-})
+}, (table) => ({
+       userIdx: index("todos_user_id_idx").on(table.userId),
+       workspaceIdx: index("todos_workspace_id_idx").on(table.workspaceId),
+}))
 
 export const comments = pgTable("comments", {
        id: text('id').primaryKey(),
@@ -73,5 +76,8 @@ export const comments = pgTable("comments", {
        updatedAt: timestamp('updated_at').notNull().defaultNow(),
        todoId: text('todo_id').notNull().references(()=> todos.id, { onDelete: 'cascade' }),
        userId: text('user_id').notNull().references(()=> user.id, { onDelete: 'cascade' })
-})
+}, (table) => ({
+       todoIdx: index("comments_todo_id_idx").on(table.todoId),
+       userIdx: index("comments_user_id_idx").on(table.userId)
+}))
 

@@ -18,3 +18,28 @@
 - [ ] animation 
 - [ ] better landing page
 - [ ] add keyboard shortcuts
+
+## Better error handling
+
+# Mutations
+
+- [ ] create workspace
+- [x] create todo
+- [x] mark todo
+- [ ] update due date
+- [ ] delete todo
+- [ ] delete workspace
+- [x] create comment
+- [ ] delete comment
+- [ ] All the Queries
+
+# Actions and their respection client fn
+- [ ] onBoard User actions
+- [ ] create workspace
+- [x] create todo action
+- [x] mark todo action
+- [ ] update due date action
+- [ ] delete todo action
+- [ ] delete workspace action
+- [x] create comment action
+- [ ] delete comment action

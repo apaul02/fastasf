@@ -9,7 +9,7 @@ import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 
@@ -40,6 +40,8 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   const [optimisticComments, setOptimisticComments] = useState<commentsType[]>(props.comments);
   const [showComments, setShowComments] = useState(false);
   const router = useRouter();
+  // const [isPending, startTransition] = useTransition()
+  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   
 
   useEffect(() => {
@@ -47,10 +49,11 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   }, [props.comments]);
 
   async function handleCommentSubmit() {
-    if(commentContent.trim() === "") {
+    if(commentContent.trim() === "" || isSubmittingComment) {
       return;
     }
-    try {
+    setIsSubmittingComment(true);
+    
       const newComment: commentsType = {
         id: `temp-${Date.now()}`, // Temp ID for optimistic ui
         content: commentContent,
@@ -61,21 +64,46 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
       }
       // Optimistically update the UI
       setOptimisticComments(prev => [...prev, newComment]);
-      setCommentContent("");
+      try {
       const response = await createCommentAction(props.todo.id, commentContent);
       if (response.success) {
-      console.log("Comment created successfully:", response.commentId);
+      
+      console.log("Comment created successfully:", response.data.id);
+      setCommentContent("");
+
       router.refresh();
+      toast.success("Comment added!")
 
        
       }
       else {
         console.error("Error creating comment:", response.error);
         setOptimisticComments(prev => prev.filter(comment => comment.id !== newComment.id));
+
+        const errorCode = response.error.code;
+        const errorMessage = response.error.message;
+        if (errorCode === 'AUTH_ERROR') {
+          toast.error("Authentication error", { description: errorMessage });
+          router.push("/");
+        }
+        else if (errorCode === 'VALIDATION_ERROR') {
+          toast.error("Invalid Input", { description: errorMessage });
+        }
+        else {
+          toast.error("Failed to create comment", { description: errorMessage });
+        }
       
       }
     }catch (error) {
       console.error("Error creating comment:", error);
+      setOptimisticComments(prev => prev.filter(comment => comment.id !== newComment.id));
+      toast.error("Failed to create comment", {
+        description: "An error occurred while creating the comment. Please try again.",
+        duration: 3000,
+        dismissible: true,
+      });
+    }finally {
+      setIsSubmittingComment(false);
     }
   }
 
@@ -99,30 +127,34 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
     props.optimisticMarkTodo(props.todo);
     setIsVisible(false);
 
-    try {
+    
       const response = await markTodoAction(props.todo.id);
       if (response.success) {
-        console.log("Todo marked successfully:", response.todoId);
+        console.log("Todo marked successfully:", response.data.todoId);
         toast.success("Todo marked successfully", {
           description: `Todo "${props.todo.title}" has been marked as completed.`,
           duration: 3000,
           dismissible: true,
         });
       } else {
-        console.error("Error marking todo:", response.error);
         props.optimisticMarkTodo(props.todo);
-        toast.error("Failed to mark todo", {
-          description: response.error || "An error occurred while marking the todo.",
-          duration: 3000,
-          dismissible: true,
-        });
-        setIsVisible(true); 
+        setIsVisible(true);
+        if(response.error.code === 'AUTH_ERROR') {
+          router.push("/");
+        }else {
+          let description = "An error occurred while marking the todo.";
+          if(response.error.code === 'NOT_FOUND') {
+            description = "Todo not found. It may have been deleted.";
+          } else if(response.error.code === 'DB_ERROR') {
+            description = "Database error occurred while marking the todo. Please try again later.";
+          }
+          toast.error("Failed to mark todo", {
+            description: description,
+            duration: 3000,
+            dismissible: true,
+          });
+        }      
       }
-    } catch (error) {
-      console.error("Error marking todo:", error);
-      props.optimisticMarkTodo(props.todo)
-      setIsVisible(true);
-    }
   }
 
   if(!isVisible) {
@@ -167,6 +199,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
                 placeholder="Add a comment..." 
                 className="mt-2 w-full border-0  shadow-none focus:ring-0 " 
                 value={commentContent}
+                disabled={isSubmittingComment}
                 onChange={(e) => setCommentContent(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {

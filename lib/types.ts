@@ -42,3 +42,7 @@ export type commentsType = typeof comments.$inferSelect;
 //   bgColorClass: string;
 //   emptyMessage: string
 // }
+
+export type TActionResult<T> = 
+  | { success: true; data: T }
+  | { success: false; error: { message: string; code?: 'AUTH_ERROR' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'UNKNOWN_ERROR' | 'DB_ERROR' }}

@@ -243,6 +243,7 @@ export function extractDateFromTitle(title: string): Date | null {
 export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?: (todo: TodosType) => void; onOptimisticTodoDelete?: (todoId: string) => void }) {
   const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const form = useForm<z.infer<typeof todoSchema>>({
     resolver: zodResolver(todoSchema),
@@ -257,6 +258,8 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
   const watchTitle = form.watch("title")
   
   const handleSubmit = form.handleSubmit(async (data) => {
+    if (isSubmitting) return; // Prevent multiple submissions
+    setIsSubmitting(true);
     form.setValue("workspaceId", props.workspaceId)
     
     const formattedData = {
@@ -268,7 +271,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
     
     console.log("Form submitted", formattedData)
     
-    try {
+    
       // Create optimistic todo
       const optimisticTodo = {
         id: `temp-${Date.now()}`, 
@@ -287,14 +290,13 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
         props.onOptimisticCreate(optimisticTodo);
         setOpen(false);
       }
-
+      try {
       const response = await createTodoAction(
         formattedData.title,
         formattedData.workspaceId, 
         formattedData.priority, 
         formattedData.dueDate
       )
-      console.log("Todo created", response)
       
       if (response.success) {
         toast.success("New todo created successfully!", {
@@ -302,31 +304,41 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
           duration: 3000,
           dismissible: true
         })
+        form.reset();
+        setSelectedDate(undefined);
+        setOpen(false);
       } else {
-        // Handle error - you might want to remove the optimistic todo here
         if(props.onOptimisticTodoDelete) {
           props.onOptimisticTodoDelete(optimisticTodo.id);
         }
+        const errorCode = response.error.code;
+        const errorMessage = response.error.message
+        if (errorCode === 'AUTH_ERROR') {
+          toast.error("Authentication error", {description: errorMessage})
+        } else if (errorCode === 'VALIDATION_ERROR') {
+          toast.error("Invalid Input", { description: errorMessage })
+        } else {
+          toast.error("Failed to create todo", {description: errorMessage})
+        }
         toast.error("Failed to create todo", {
-          description: response.error || "An error occurred while creating the todo.",
+          description: response.error.message || "An error occurred while creating the todo.",
           duration: 3000,
           dismissible: true
         })
-        console.error("Failed to create todo:", response.error);
       }
-      
-      form.reset();
-      setSelectedDate(undefined);
-      setOpen(false);
-      
-      return formattedData
+      // return formattedData
     } catch (error) {
       console.error("Error creating todo:", error)
+      if (props.onOptimisticTodoDelete) {
+        props.onOptimisticTodoDelete(optimisticTodo.id);
+      }
       toast.error("Failed to create todo", {
         description: "An error occurred while creating the todo. Please try again.",
         duration: 3000,
         dismissible: true
       })
+    }finally {
+      setIsSubmitting(false);
     }
   })
   
@@ -439,6 +451,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
             <Button 
               type="submit" 
               className="w-full"
+              disabled= {isSubmitting}
             >
               Create Todo
             </Button>

@@ -1,6 +1,6 @@
 "use server"
 
-import { cookies, headers } from "next/headers"
+import {  headers } from "next/headers"
 import { auth } from "./auth"
 import { MUTATIONS, QUERIES } from "./db/queries"
 import { commentsType, TActionResult, TodosType, workspaceType } from "./types"

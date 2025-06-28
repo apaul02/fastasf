@@ -44,7 +44,7 @@ export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: 
           toast.error("Failed to delete todo", { description: errorMessage });
         }
       }
-    }catch (error) {
+    }catch {
       props.optimisticDeleteTodo(props.todoId); 
       toast.error("Failed to delete todo", {
         description: "An error occurred while deleting the todo. Please try again.",

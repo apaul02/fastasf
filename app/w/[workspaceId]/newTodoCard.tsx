@@ -139,7 +139,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
           toast.error("Failed to delete comment", { description: errorMessage });
         }
       }
-    }catch (error) {
+    }catch {
       setOptimisticComments(prev => prev.filter(comment => comment.id !== commentId));
       toast.error("Failed to delete comment", {
         description: "An error occurred while deleting the comment. Please try again.",

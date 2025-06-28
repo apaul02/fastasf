@@ -42,6 +42,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   const router = useRouter();
   // const [isPending, startTransition] = useTransition()
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
+  const [isDeletingComment, setIsDeletingComment] = useState(false);
   
 
   useEffect(() => {
@@ -109,17 +110,44 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
 
   async function handleDeleteComment(commentId: string) {
     try {
+      if(isDeletingComment) return;
+      setIsDeletingComment(true);
       const originalComments = optimisticComments;
       setOptimisticComments(prev => prev.filter(comment => comment.id !== commentId));
       const response = await deleteCommentAction(commentId);
       if (response.success) {
-        console.log("Comment deleted successfully:", response.commentId);
+        toast.success("Comment deleted successfully", {
+          description: "The comment has been removed.",
+          duration: 3000,
+          dismissible: true,
+        });
       } else {
-        console.error("Error deleting comment:", response.error);
         setOptimisticComments(originalComments);
+        const errorCode = response.error.code;
+        const errorMessage = response.error.message;
+        if (errorCode === 'AUTH_ERROR') {
+          toast.error("Authentication error", { description: errorMessage });
+          router.push("/");
+        }
+        else if (errorCode === 'NOT_FOUND') {
+          toast.error("Comment not found", { description: errorMessage });
+        }
+        else if (errorCode === 'DB_ERROR') {
+          toast.error("Database error", { description: errorMessage });
+        }
+        else {
+          toast.error("Failed to delete comment", { description: errorMessage });
+        }
       }
     }catch (error) {
-      console.error("Error deleting comment:", error);
+      setOptimisticComments(prev => prev.filter(comment => comment.id !== commentId));
+      toast.error("Failed to delete comment", {
+        description: "An error occurred while deleting the comment. Please try again.",
+        duration: 3000,
+        dismissible: true,
+      });
+    }finally {
+      setIsDeletingComment(false);
     }
   }
 
@@ -217,7 +245,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
                       <p>{comment.content}</p>
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-500 mt-1">
                         <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
-                        <Button variant="ghost" size="icon" className="ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteComment(comment.id)}>
+                        <Button disabled={isDeletingComment} variant="ghost" size="icon" className="ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteComment(comment.id)}>
                           <Trash2 color="#ff0000" className="h-4 w-4" />
                         </Button>
                       </div>

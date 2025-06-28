@@ -36,7 +36,6 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [isNewWorkspaceDialogOpen, setIsNewWorkspaceDialogOpen] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -74,19 +73,22 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
 
   const handleCreateWorkspace = async () => {
       setIsLoading(true);
-      setError("");
       try {
         const validation = workspaceNameSchema.safeParse({ name: workspaceName });
         if (!validation.success) {
-          setError(validation.error.format().name?._errors[0] || "Invalid workspace name");
+          toast.error("Invalid workspace name", {
+            description: validation.error.format().name?._errors[0] || "Please enter a valid workspace name",
+            duration: 3000,
+            dismissible: true,
+          });
           console.log(validation.error.format().name?._errors[0]);
           return;
         }
         const response = await createWorkspaceAction(workspaceName);
         if(response.success) {
-          console.log("Workspace created successfully:", response.workspaceId);
+          console.log("Workspace created successfully:", response.data.id);
           setWorkspaceName("");
-          router.push(`/w/${response.workspaceId}`);
+          router.push(`/w/${response.data.id}`);
           setIsNewWorkspaceDialogOpen(false);
           toast.success("Workspace created successfully", {
             description: "Your workspace has been created.",
@@ -95,17 +97,25 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
           });
           
         }else {
-          console.log(response.error)
-          toast.error("Failed to create workspace", {
-            description: response.error || "An error occurred while creating the workspace.",
-            duration: 3000,
-            dismissible: true,
-          });
+          const errorCode = response.error.code;
+          const errorMessage = response.error.message;
+          if (errorCode === 'AUTH_ERROR') {
+            toast.error("Authentication error", { description: errorMessage });
+            router.push("/");
+          }
+          else if (errorCode === 'VALIDATION_ERROR') {
+            toast.error("Invalid Input", { description: errorMessage });
+          }
+          else if (errorCode === 'DB_ERROR') {
+            toast.error("Database error", { description: errorMessage });
+          }
+          else {
+            toast.error("Failed to create workspace", { description: errorMessage });
+          }
         }
         
       }catch(err) {
         console.error("Error creating workspace:", err);
-        setError("Failed to create workspace. Please try again.");
         toast.error("Failed to create workspace", {
           description: "An error occurred while creating the workspace. Please try again.",
           duration: 3000,
@@ -177,8 +187,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       try {
         const response = await deleteWorkspaceAction(workspaceId);
         if(response.success) {
-          console.log("Workspace deleted successfully:", response.workspaceId);
-          if (response.workspaceId === props.currentWorkspace.id) {
+          console.log("Workspace deleted successfully:", response.data.id);
+          if (response.data.id === props.currentWorkspace.id) {
             router.push(`/w/${props.workspaces[0].id}`);
           }
           router.refresh();
@@ -188,12 +198,21 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
             dismissible: true,
           });
         }else {
-          console.log(response.error)
-          toast.error("Failed to delete workspace", {
-            description: response.error || "An error occurred while deleting the workspace.",
-            duration: 3000,
-            dismissible: true,
-          });
+          const errorCode = response.error.code;
+          const errorMessage = response.error.message;
+          if (errorCode === 'AUTH_ERROR') {
+            toast.error("Authentication error", { description: errorMessage });
+            router.push("/");
+          }
+          else if (errorCode === 'NOT_FOUND') {
+            toast.error("Workspace not found", { description: errorMessage });
+          }
+          else if (errorCode === 'DB_ERROR') {
+            toast.error("Database error", { description: errorMessage });
+          }
+          else {
+            toast.error("Failed to delete workspace", { description: errorMessage });
+          }
         }
       }catch(err) {
         console.error("Error deleting workspace:", err);
@@ -268,7 +287,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       try {
         const response = await updateDueDateAction(todoId, newDueDate);
         if (response.success) {
-          console.log("Todo due date updated successfully:", response.todoId);
+          console.log("Todo due date updated successfully:", response.data.id);
           // No need to refresh since we already updated optimistically
         } else {
           // Revert to original state on error
@@ -348,11 +367,6 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               <DialogHeader>
                 <DialogTitle>Create a new workspace</DialogTitle>
                 <Input placeholder="Name of your new workspace" onChange={(e) => setWorkspaceName(e.target.value)} />
-                {error && (
-                  <div className="text-red-500 text-sm mt-2">
-                    {error}
-                  </div>
-                )}
                 <Button disabled={isLoading} onClick={handleCreateWorkspace}>
                   {isLoading ? (
                     <>

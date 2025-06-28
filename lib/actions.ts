@@ -3,7 +3,7 @@
 import { cookies, headers } from "next/headers"
 import { auth } from "./auth"
 import { MUTATIONS, QUERIES } from "./db/queries"
-import { commentsType, TActionResult, TodosType } from "./types"
+import { commentsType, TActionResult, TodosType, workspaceType } from "./types"
 import { AuthError, DatabaseError, NotFoundError, ValidationError } from "./errors"
 
 export async function onBoardUserAction() {
@@ -39,25 +39,34 @@ export async function onBoardUserAction() {
   }
 } 
 
-export async function createWorkspaceAction(workspaceName: string) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
+export async function createWorkspaceAction(workspaceName: string): Promise<TActionResult<workspaceType>> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
 
-  if (!session?.user) {
-    return {success: false, error: "User not authenticated", workspaceId: null }
+    if (!session?.user) {
+      throw new AuthError();
+    }
+
+    const userId = session.user.id;
+
+    const newWorkspace = await MUTATIONS.createWorkspace(userId, workspaceName);
+    return { success: true, data: newWorkspace };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof ValidationError) {
+      return { success: false, error: { message: error.message, code: 'VALIDATION_ERROR' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
+    console.error("Error in createWorkspaceAction:", error);
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
-
-  const userId = session.user.id;
-
-  const newWorkspace = await MUTATIONS.createWorkspace(userId, workspaceName);
-  if(!newWorkspace || !newWorkspace.id) {
-    return { success: false, error: "Failed to create personal workspace for new user", workspaceId: null }
-  }
-
-  const c = await cookies();
-  c.set("force-refresh", JSON.stringify(Math.random()))
-  return { success: true, workspaceId: newWorkspace.id }
 }
 
 export async function createTodoAction(title: string, workspaceId: string, priority: number, dueDate?: string): Promise<TActionResult<TodosType>> {
@@ -113,73 +122,87 @@ export async function markTodoAction(todoId: string): Promise<TActionResult<{ to
   }
 }
 
-export async function updateDueDateAction(todoId: string, dueDate: string) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
-
-  if (!session?.user) {
-    return {success: false, error: "User not authenticated", todoId: null }
-  }
-
+export async function updateDueDateAction(todoId: string, dueDate: string): Promise<TActionResult<TodosType>> {
   try {
-    const newTodo = await MUTATIONS.updateDueDate(todoId, dueDate);
-    if(!newTodo || !newTodo.id) {
-      return { success: false, error: "Failed to update due date", todoId: null }
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
     }
-    const c = await cookies();
-    c.set("force-refresh", JSON.stringify(Math.random()))
-    
-    return { success: true, todoId: newTodo.id }
-  } catch (error) {
+
+    const updatedTodo = await MUTATIONS.updateDueDate(todoId, dueDate);
+    return { success: true, data: updatedTodo };
+  }catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "Todo not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
     console.error("Error in updateDueDateAction:", error);
-    return { success: false, error: "Server error when updating due date", todoId: null }
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
 }
 
-export async function deleteTodoAction(todoId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
-
-  if (!session?.user) {
-    return {success: false, error: "User not authenticated", todoId: null }
-  }
-
+export async function deleteTodoAction(todoId: string): Promise<TActionResult<TodosType>> {
   try {
-    const newTodo = await MUTATIONS.deleteTodo(todoId);
-    if(!newTodo || !newTodo.id) {
-      return { success: false, error: "Failed to delete todo", todoId: null }
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
     }
-    // const c = await cookies();
-    // c.set("force-refresh", JSON.stringify(Math.random()))
-    
-    return { success: true, todoId: newTodo.id }
-  } catch (error) {
+
+    const deletedTodo = await MUTATIONS.deleteTodo(todoId);
+    return { success: true, data: deletedTodo };
+  }catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "Todo not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
     console.error("Error in deleteTodoAction:", error);
-    return { success: false, error: "Server error when deleting todo", todoId: null }
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
 }
 
-export async function deleteWorkspaceAction(workspaceId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
-
-  if (!session?.user) {
-    return {success: false, error: "User not authenticated", workspaceId: null }
-  }
-
+export async function deleteWorkspaceAction(workspaceId: string): Promise<TActionResult<workspaceType>> {
   try {
-    const newWorkspace = await MUTATIONS.deleteWorkspace(workspaceId);
-    if(!newWorkspace || !newWorkspace.id) {
-      return { success: false, error: "Failed to delete workspace", workspaceId: null }
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
     }
-    
-    return { success: true, workspaceId: newWorkspace.id }
-  } catch (error) {
+
+    const deletedWorkspace = await MUTATIONS.deleteWorkspace(workspaceId);
+    return { success: true, data: deletedWorkspace };
+  }catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "Workspace not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
     console.error("Error in deleteWorkspaceAction:", error);
-    return { success: false, error: "Server error when deleting workspace", workspaceId: null }
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
 }
 
@@ -214,24 +237,30 @@ export async function createCommentAction(todoId: string, content: string):Promi
 }
 
 
-export async function deleteCommentAction(commentId: string) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
-
-  if (!session?.user) {
-    return {success: false, error: "User not authenticated", commentId: null }
-  }
-
+export async function deleteCommentAction(commentId: string): Promise<TActionResult<commentsType>> {
   try {
-    const deletedComment = await MUTATIONS.deleteComment(commentId);
-    if(!deletedComment || !deletedComment.id) {
-      return { success: false, error: "Failed to delete comment", commentId: null }
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
     }
-    
-    return { success: true, commentId: deletedComment.id }
-  } catch (error) {
+
+    const deletedComment = await MUTATIONS.deleteComment(commentId);
+    return { success: true, data: deletedComment };
+  }catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "Comment not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
     console.error("Error in deleteCommentAction:", error);
-    return { success: false, error: "Server error when deleting comment", commentId: null }
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
 }

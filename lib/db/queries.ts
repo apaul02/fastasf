@@ -3,17 +3,35 @@ import { db } from ".";
 import { v4 as uuidv4 } from "uuid";
 import { comments, todos, workspace } from "./schema";
 import { eq, sql } from "drizzle-orm";
-import { commentsType, TodosType } from "../types";
+import { commentsType, TodosType, workspaceType } from "../types";
 import { DatabaseError, NotFoundError, ValidationError } from "../errors";
 
 export const MUTATIONS = {
-  createWorkspace: async function (userId: string, name: string) {
-    const result = await db.insert(workspace).values({
+  createWorkspace: async function (userId: string, name: string): Promise<workspaceType> {
+    if(!name || name.trim().length === 0) {
+      throw new ValidationError("Workspace name cannot be empty");
+    }
+    if(!userId) {
+      throw new ValidationError("User ID is required to create a workspace");
+    }
+    try {
+      const result = await db.insert(workspace).values({
       id: uuidv4(),
       name: name,
       userId: userId,
-    }).returning();
-    return result[0];
+      }).returning();
+      if(!result || result.length === 0) {
+        throw new DatabaseError("Failed to create workspace");
+      }
+      return result[0];
+    }catch (error) {
+      if(error instanceof ValidationError || error instanceof DatabaseError) {
+        throw error;
+      }
+
+      console.error("Database error in createWorkspace mutation:", error);
+      throw new DatabaseError("An error occurred while creating the workspace.");
+    }
   },
   createTodo: async function (title: string, workspaceId: string, userId: string, priority: number, dueDate?: string):Promise<TodosType> {
     if(!title || title.trim().length === 0) {
@@ -69,22 +87,62 @@ export const MUTATIONS = {
     }
   },
   updateDueDate: async function (todoId: string, dueDate: string) {
-    const result = await db.update(todos).set(
+    try {
+      if(!todoId || !dueDate) {
+        throw new ValidationError("Todo ID and Due Date are required to update the due date");
+      }
+      const result = await db.update(todos).set(
       {
         dueDate: dueDate,
       }
     )
     .where(eq(todos.id, todoId))
     .returning();
-    return result[0];
+      if(result.length === 0) {
+        throw new NotFoundError("Todo to update due date was not found");
+      }
+      return result[0];
+    }catch (error) {
+      if(error instanceof ValidationError || error instanceof NotFoundError) {
+        throw error;
+      }
+      console.error("Database error in updateDueDate mutation:", error);
+      throw new DatabaseError("Failed to update due date. Please try again later.");
+    }
+    
   },
   deleteTodo: async function (todoId: string) {
-    const result = await db.delete(todos).where(eq(todos.id, todoId)).returning();
-    return result[0];
+    try {
+      const deletedTodo = await db.delete(todos).where(eq(todos.id, todoId)).returning();
+      if(deletedTodo.length === 0) {
+        throw new NotFoundError("Todo to delete was not found");
+      }
+      return deletedTodo[0];
+
+    }catch (error) {
+      if(error instanceof NotFoundError) {
+        throw error;
+      }
+      console.error("Database error in deleteTodo mutation:", error);
+      throw new DatabaseError("Failed to delete todo. Please try again later.");
+    }
+    
   },
   deleteWorkspace: async function (workspaceId: string) {
+    try {
     const result = await db.delete(workspace).where(eq(workspace.id, workspaceId)).returning();
+    if(result.length === 0) {
+      throw new NotFoundError("Workspace to delete was not found");
+    }
     return result[0];
+
+    }catch (error) {
+      if(error instanceof NotFoundError) {
+        throw error;
+      }
+      console.error("Database error in deleteWorkspace mutation:", error);
+      throw new DatabaseError("Failed to delete workspace. Please try again later.");
+    }
   },
   createComment: async function (todoId: string, userId: string, content: string): Promise<commentsType> {
     if (!content || content.trim().length === 0) {
@@ -118,8 +176,19 @@ export const MUTATIONS = {
 
   },
   deleteComment: async function (commentId: string) {
-    const result = await db.delete(comments).where(eq(comments.id, commentId)).returning();
-    return result[0];
+    try {
+    const deletedComment = await db.delete(comments).where(eq(comments.id, commentId)).returning();
+    if(deletedComment.length === 0) {
+      throw new NotFoundError("Comment to delete was not found"); 
+    }
+    return deletedComment[0];
+    }catch (error) {
+      if(error instanceof NotFoundError) {
+        throw error;
+      }
+      console.error("Database error in deleteComment mutation:", error);
+      throw new DatabaseError("Failed to delete comment. Please try again later.");
+    }
   }
 }
 

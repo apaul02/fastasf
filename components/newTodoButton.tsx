@@ -22,6 +22,7 @@ import { DialogTitle } from "@radix-ui/react-dialog"
 import { createTodoAction } from "@/lib/actions"
 import { TodosType } from "@/lib/types"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 const todoSchema = z.object({
   title: z.string().min(1, "Title is required").max(100, "Title should be less than 100 characters"),
@@ -244,6 +245,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
   const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
   
   const form = useForm<z.infer<typeof todoSchema>>({
     resolver: zodResolver(todoSchema),
@@ -315,6 +317,8 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
         const errorMessage = response.error.message
         if (errorCode === 'AUTH_ERROR') {
           toast.error("Authentication error", {description: errorMessage})
+          router.push("/");
+          
         } else if (errorCode === 'VALIDATION_ERROR') {
           toast.error("Invalid Input", { description: errorMessage })
         } else {

@@ -11,13 +11,14 @@ import { toast } from "sonner";
 export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: (todoId: string) => void }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteTodo = async () => {
     try {
+      setIsDeleting(true);
       props.optimisticDeleteTodo(props.todoId);
       const response = await deleteTodoAction(props.todoId);
       if (response.success) {
-        console.log("Todo deleted successfully:", response.todoId);
         router.refresh();
         toast.success("Todo deleted successfully", {
           description: "The todo has been removed.",
@@ -26,23 +27,32 @@ export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: 
           })
         
       } else {
-        console.error("Error deleting todo:", response.error);
-        toast.error("Failed to delete todo", {
-          description: response.error || "An error occurred while deleting the todo.",
-          duration: 3000,
-          dismissible: true,
-        });
         props.optimisticDeleteTodo(props.todoId); // Revert optimistic update
+        const errorCode = response.error.code;
+        const errorMessage = response.error.message;
+        if (errorCode === 'AUTH_ERROR') {
+          toast.error("Authentication error", { description: errorMessage });
+          router.push("/");
+        }
+        else if (errorCode === 'NOT_FOUND') {
+          toast.error("Todo not found", { description: errorMessage });
+        }
+        else if (errorCode === 'DB_ERROR') {
+          toast.error("Database error", { description: errorMessage });
+        }
+        else {
+          toast.error("Failed to delete todo", { description: errorMessage });
+        }
       }
     }catch (error) {
-      console.error("Error deleting todo:", error);
+      props.optimisticDeleteTodo(props.todoId); 
       toast.error("Failed to delete todo", {
         description: "An error occurred while deleting the todo. Please try again.",
         duration: 3000,
         dismissible: true,
       });
-      props.optimisticDeleteTodo(props.todoId); 
     }finally {
+      setIsDeleting(false);
       setOpen(false);
     }
   }
@@ -58,7 +68,7 @@ export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: 
         </DialogHeader>
         <div className="flex justify-end">
           <Button variant={"destructive"} onClick={handleDeleteTodo}>Delete</Button>
-          <Button variant={"outline"} onClick={() => setOpen(false)} className="ml-2">
+          <Button disabled= {isDeleting} variant={"outline"} onClick={() => setOpen(false)} className="ml-2">
             Cancel
           </Button>  
         </div>

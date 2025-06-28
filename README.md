@@ -23,23 +23,23 @@
 
 # Mutations
 
-- [ ] create workspace
+- [x] create workspace
 - [x] create todo
 - [x] mark todo
-- [ ] update due date
-- [ ] delete todo
-- [ ] delete workspace
+- [x] update due date
+- [x] delete todo
+- [x] delete workspace
 - [x] create comment
-- [ ] delete comment
+- [x] delete comment
 - [ ] All the Queries
 
 # Actions and their respection client fn
 - [ ] onBoard User actions
-- [ ] create workspace
+- [x] create workspace
 - [x] create todo action
 - [x] mark todo action
-- [ ] update due date action
-- [ ] delete todo action
-- [ ] delete workspace action
+- [x] update due date action
+- [x] delete todo action
+- [x] delete workspace action
 - [x] create comment action
-- [ ] delete comment action
+- [x] delete comment action

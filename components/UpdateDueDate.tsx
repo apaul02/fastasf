@@ -26,6 +26,7 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
   const [open, setOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(props.todo.dueDate ? parse(props.todo.dueDate, "yyyy-MM-dd'T'HH:mm:ss", new Date()) : undefined);
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof updateDueDateSchema>>({
     resolver: zodResolver(updateDueDateSchema),
@@ -52,7 +53,16 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
   }, [watchDateText, form]);
   
   const handleSubmit = form.handleSubmit(async (data) => {
-    if (!data.dueDate || !props.todo.id) return;
+    setIsSubmitting(true);
+    if (!data.dueDate || !props.todo.id) {
+      toast.error("Please select a valid due date", {
+        description: "You must select a due date to update.",
+        duration: 3000,
+        dismissible: true,
+      });
+      setIsSubmitting(false);
+      return;
+    }
     
     try {
       const response = await updateDueDateAction(
@@ -60,7 +70,6 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
         format(data.dueDate, "yyyy-MM-dd'T'HH:mm:ss")
       );
       if(response.success) {
-        console.log("Due date updated successfully:", response.todoId);
         router.refresh();
         toast.success("Due date updated successfully", {
           description: `Due date for "${props.todo.title}" has been updated.`,
@@ -68,12 +77,21 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
           dismissible: true,
         });
       }else {
-        console.error("Error updating due date:", response.error);
-        toast.error("Failed to update due date", {
-          description: response.error || "An error occurred while updating the due date.",
-          duration: 3000,
-          dismissible: true,
-        })
+        const errorCode = response.error.code;
+        const errorMessage = response.error.message;
+        if (errorCode === 'AUTH_ERROR') {
+          toast.error("Authentication error", { description: errorMessage });
+          router.push("/");
+        }
+        else if (errorCode === 'NOT_FOUND') {
+          toast.error("Todo not found", { description: errorMessage });
+        }
+        else if (errorCode === 'DB_ERROR') {
+          toast.error("Database error", { description: errorMessage });
+        }
+        else {
+          toast.error("Failed to update due date", { description: errorMessage });
+        }
       }
       
       
@@ -93,6 +111,10 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
         duration: 3000,
         dismissible: true,
       });
+    }finally {
+      setIsSubmitting(false);
+      setOpen(false);
+      setSelectedDate(undefined);
     }
   });
 
@@ -159,6 +181,7 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
             <Button 
               type="submit" 
               className="w-full"
+              disabled={isSubmitting}
             >
               Update Due Date
             </Button>

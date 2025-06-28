@@ -241,7 +241,7 @@ export function extractDateFromTitle(title: string): Date | null {
   return detectedDate && isValid(detectedDate) ? detectedDate : null
 }
 
-export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?: (todo: TodosType) => void; onOptimisticTodoDelete?: (todoId: string) => void }) {
+export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?: (todo: TodosType) => void; onOptimisticTodoDelete?: (todoId: string) => void; onCreationSuccess?: (realTodo: TodosType, tempId: string) => void}) {
   const [open, setOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -301,6 +301,9 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
       )
       
       if (response.success) {
+        if(props.onCreationSuccess) {
+          props.onCreationSuccess(response.data, optimisticTodo.id);
+        }
         toast.success("New todo created successfully!", {
           description: `Todo "${formattedData.title}" has been created.`,
           duration: 3000,
@@ -308,7 +311,7 @@ export function NewTodoButton(props: { workspaceId: string; onOptimisticCreate?:
         })
         form.reset();
         setSelectedDate(undefined);
-        setOpen(false);
+        // setOpen(false);
       } else {
         if(props.onOptimisticTodoDelete) {
           props.onOptimisticTodoDelete(optimisticTodo.id);

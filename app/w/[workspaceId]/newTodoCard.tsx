@@ -202,6 +202,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
           <div className="flex flex-col sm:flex-row justify-between w-full">
             <div>
               <div className="text-lg font-semibold">{props.todo.title}</div>
+              {/* <div>{props.todo.id}</div> */}
               <div className=" text-slate-500 text-sm">{formatDate(props.todo.dueDate)}</div>
             </div>
             <div className="flex mt-2 sm:mt-0">

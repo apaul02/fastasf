@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "./ui/button";
 import { deleteTodoAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
-import { Trash2Icon } from "lucide-react";
+import { Loader2, Trash2Icon } from "lucide-react";
 import { toast } from "sonner";
 
 export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: (todoId: string) => void }) {
@@ -67,7 +67,7 @@ export function DeleteTodoButton(props: { todoId: string, optimisticDeleteTodo: 
           <DialogDescription>This action cannot be undone.</DialogDescription>
         </DialogHeader>
         <div className="flex justify-end">
-          <Button variant={"destructive"} onClick={handleDeleteTodo}>Delete</Button>
+          <Button variant={"destructive"} onClick={handleDeleteTodo}>{isDeleting ? (<Loader2 className="h-4 w-4 mr-2 animate-spin" />): ("Delete")}</Button>
           <Button disabled= {isDeleting} variant={"outline"} onClick={() => setOpen(false)} className="ml-2">
             Cancel
           </Button>  

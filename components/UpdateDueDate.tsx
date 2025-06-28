@@ -10,7 +10,7 @@ import { TodosType } from "@/lib/types";
 import { format, parse } from "date-fns";
 import { Input } from "./ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { CalendarIcon, TimerResetIcon } from "lucide-react";
+import { CalendarIcon, Loader2, TimerResetIcon } from "lucide-react";
 import { Calendar } from "./ui/calendar";
 import { extractDateFromTitle } from "./newTodoButton";
 import { updateDueDateAction } from "@/lib/actions";
@@ -183,7 +183,7 @@ export function UpdateDueDateButton(props: {todo: TodosType }) {
               className="w-full"
               disabled={isSubmitting}
             >
-              Update Due Date
+              {isSubmitting ? (<Loader2 className="animate-spin h-4 w-4 mr-2" />) : ("Update date") }
             </Button>
           </form>
         </Form>

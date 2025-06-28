@@ -238,6 +238,14 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         t.id === todo.id ? { ...t, completed: !t.completed } : t
       ));
     }
+    const handleCreationSuccess = (realTodo: TodosType, tempId: string) => {
+      setOptimisticTodos(prev => 
+        prev.map(todo => 
+          todo.id === tempId ? realTodo : todo
+        )
+      );
+    };
+
 
     const handleDragEnd = async (result: DropResult) => {
       if (!result.destination) {
@@ -308,7 +316,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         <div className="font-semibold text-lg">yep-done</div>
         
         <div className="flex items-center gap-3">
-          <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete} />
+          <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete}
+          onCreationSuccess={handleCreationSuccess} />
           
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>

@@ -8,7 +8,6 @@ export const Header = () => {
     <header className="p-4 flex justify-between items-center">
       <h1 className="text-lg font-bold">Yep-Done</h1>
       <div className="flex items-center gap-4">
-        <GithubLoginButton size="sm" />
         <ModeToggle />
       </div>
     </header>

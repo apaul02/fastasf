@@ -1,6 +1,5 @@
 "use client";
 
-import { GithubLoginButton } from "../GithubLoginButton";
 import { ModeToggle } from "../toggle-button";
 
 export const Header = () => {

@@ -6,7 +6,7 @@ export const TitleSection = () => {
 	const text = "A simple todo app that dose simple things.".split(" ");
 	return (
 		<div className="text-center mt-28 flex flex-col items-center">
-      <div className="absolute inset-0 -z-10 h-full w-full bg-black" />
+      <div className="absolute inset-0 -z-10 h-full w-full" />
 			<motion.div
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}

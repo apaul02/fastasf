@@ -78,7 +78,11 @@ export function CreateWorkspaceCard() {
       <CardContent>
         <div className="flex flex-col space-y-2">
           <Label>Workspace Name</Label>
-          <Input placeholder="Name of your workspace" onChange={(e) => setWorkspaceName(e.target.value) }></Input>  
+          <Input placeholder="Name of your workspace" onChange={(e) => setWorkspaceName(e.target.value) } onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              handleCreateWorkspace();
+            }
+          }}></Input>  
           <Button onClick={handleCreateWorkspace} disabled={isLoading}>
             {isLoading ? "Creating..." : "Create workspace"}
           </Button>

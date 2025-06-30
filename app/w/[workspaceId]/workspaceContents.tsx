@@ -18,6 +18,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 import { ModeToggle } from "@/components/toggle-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
+import Image from "next/image"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -41,6 +42,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [optimisticTodos, setOptimisticTodos] = useState<TodosType[]>(props.todos);
   const [isMobile, setIsMobile] = useState(false);
+  const [isWorkspceDeleting, setIsWorkspaceDeleting] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -178,6 +180,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
     }, [optimisticTodos]);
 
     const handleDeleteWorkspace = async (workspaceId: string) => {
+      setIsWorkspaceDeleting(true);
       if (workspaceId === props.workspaces[0].id) {
         console.error("Cannot delete personal workspace");
         setIsDeleteDialogOpen(false);
@@ -222,6 +225,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
           dismissible: true,
         });
       }finally {
+        setIsWorkspaceDeleting(false);
         setIsDeleteDialogOpen(false);
         setIsDropdownOpen(false);
       }
@@ -313,11 +317,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
     <div className="flex flex-col min-h-screen">
       {/* Topbar */}
       <div className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 py-2 border-b">
-        <div className="font-semibold text-lg">yep-done</div>
-        
         <div className="flex items-center gap-3">
-          <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete}
-          onCreationSuccess={handleCreationSuccess} />
+          <Image src="/Untitled.svg" alt="Logo" width={30} height={30} />
           
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -374,8 +375,12 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
             </DropdownMenu>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create a new workspace</DialogTitle>
-                <Input placeholder="Name of your new workspace" onChange={(e) => setWorkspaceName(e.target.value)} />
+                <DialogTitle className="pd-2">Create a new workspace</DialogTitle>
+                <Input placeholder="Name of your new workspace" onChange={(e) => setWorkspaceName(e.target.value)} onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleCreateWorkspace();
+                  }
+                }} />
                 <Button disabled={isLoading} onClick={handleCreateWorkspace}>
                   {isLoading ? (
                     <>
@@ -389,6 +394,11 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               </DialogHeader>
             </DialogContent>
           </Dialog>
+        </div>
+        
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <NewTodoButton workspaceId={props.currentWorkspace.id} onOptimisticCreate={handleOptimisticTodoCreate} onOptimisticTodoDelete={handleOptimisticTodoDelete}
+          onCreationSuccess={handleCreationSuccess} />
         </div>
         
         <div className="flex items-center gap-2">
@@ -436,9 +446,16 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     handleDeleteWorkspace(workspaceToDelete);
                   }
                 }}
-                disabled={workspaceToDelete === props.workspaces[0]?.id}
+                disabled={workspaceToDelete === props.workspaces[0]?.id || isWorkspceDeleting}
               >
-                Delete
+                {isWorkspceDeleting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Workspace"
+                )}
               </Button>
               <Button variant={"outline"} onClick={() => setIsDeleteDialogOpen(false)} className="ml-2">
                 Cancel

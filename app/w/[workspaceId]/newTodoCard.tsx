@@ -6,11 +6,12 @@ import { Input } from "@/components/ui/input";
 import { UpdateDueDateButton } from "@/components/UpdateDueDate";
 import { createCommentAction, deleteCommentAction, markTodoAction } from "@/lib/actions";
 import { commentsType, TodosType } from "@/lib/types";
-import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
+import { add, format, isBefore, isToday, isTomorrow, parse, set } from "date-fns";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "motion/react";
 
 
 
@@ -65,6 +66,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
       }
       // Optimistically update the UI
       setOptimisticComments(prev => [...prev, newComment]);
+      setCommentContent("");
       try {
       const response = await createCommentAction(props.todo.id, commentContent);
       if (response.success) {
@@ -78,6 +80,7 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
        
       }
       else {
+        setCommentContent(newComment.content);
         console.error("Error creating comment:", response.error);
         setOptimisticComments(prev => prev.filter(comment => comment.id !== newComment.id));
 
@@ -189,7 +192,9 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
     return null;
   }
   return (
-    <div>
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+    >
       <div className={`border-3  rounded-lg p-4 mb-4 ${props.todo.completed ? "opacity-0" : ""}`.trim()}>
         <div className="flex items-start">
           <div>
@@ -220,47 +225,57 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
             </div>
           </div>
         </div>
-
+      <AnimatePresence>
         {showComments && (
-          <>
-            <div className="flex justify-between items-center mt-2">
-              <Input 
-                placeholder="Add a comment..." 
-                className="mt-2 w-full border-0  shadow-none focus:ring-0 " 
-                value={commentContent}
-                disabled={isSubmittingComment}
-                onChange={(e) => setCommentContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleCommentSubmit();
-                  }
-                }}
-              />
-              {/* <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button> */}
-            </div>
-            <div>
-              {optimisticComments.length > 0 ? (
-                <div className="mt-2">
-                  {optimisticComments.map((comment) => (
-                    <div key={comment.id} className=" py-2">
-                      <p>{comment.content}</p>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-500 mt-1">
-                        <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
-                        <Button disabled={isDeletingComment} variant="ghost" size="icon" className="ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteComment(comment.id)}>
-                          <Trash2 color="#ff0000" className="h-4 w-4" />
-                        </Button>
+          <motion.div
+            // layout 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: showComments ? 1 : 0, height: showComments ? "auto" : 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            exit={{ opacity: 0, height: 0 }}
+            className={`overflow-hidden mt-2`.trim()}
+          >
+            <>
+              <div className="flex justify-between items-center mt-2">
+                <Input 
+                  placeholder="Add a comment..." 
+                  className="mt-2 w-full border-0  shadow-none focus:ring-0 " 
+                  value={commentContent}
+                  disabled={isSubmittingComment}
+                  onChange={(e) => setCommentContent(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleCommentSubmit();
+                    }
+                  }}
+                />
+                {/* <Button onClick={handleCommentSubmit}><ArrowBigUp /></Button> */}
+              </div>
+              <div>
+                {optimisticComments.length > 0 ? (
+                  <div className="mt-2">
+                    {optimisticComments.map((comment) => (
+                      <div key={comment.id} className=" py-2">
+                        <p>{comment.content}</p>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between text-xs text-gray-500 mt-1">
+                          <span className="text-xs text-gray-500">{format(new Date(comment.createdAt), "PPpp")}</span>
+                          <Button disabled={isDeletingComment} variant="ghost" size="icon" className="ml-0 sm:ml-2 mt-1 sm:mt-0" onClick={() => handleDeleteComment(comment.id)}>
+                            <Trash2 color="#ff0000" className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-500 mt-2">No comments yet.</p>
-              )}
-            </div>
-          </>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 mt-2">No comments yet.</p>
+                )}
+              </div>
+            </>
+          </motion.div>
         )}
+      </AnimatePresence>
 
       </div>
-    </div>
+    </motion.div>
   )
 }

@@ -13,7 +13,7 @@ export const TitleSection = () => {
 				transition={{ duration: 0.3, ease: "easeOut" }}
 				className="flex flex-col items-center justify-center"
 			>
-				<h1 className="text-6xl font-bold animate-fade-in-up">2DO.</h1>
+				<h1 className="text-8xl font-bold animate-fade-in-up">2DO.</h1>
 			</motion.div>
 			<motion.p className="text-lg text-muted-foreground mt-4 max-w-2xl">
 				{text.map((el, i) => (
@@ -25,7 +25,7 @@ export const TitleSection = () => {
 							delay: i / 10,
 						}}
 						key={i}
-						className="inline-block mr-1.5"
+						className="inline-block mr-1.5 text-xl"
 					>
 						{el}
 					</motion.span>

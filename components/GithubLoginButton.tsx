@@ -5,6 +5,14 @@ import { authClient } from "@/lib/auth-client";
 import { Github } from "lucide-react";
 import { useState } from "react";
 import { motion } from "motion/react"
+import { RainbowButton } from "./magicui/rainbow-button";
+import { Poppins } from "next/font/google";
+import { toast } from "sonner";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +28,7 @@ export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
 
 
       if (authResponse.error) {
-        console.error("GitHub login error:", authResponse.error);
+        toast.error("Failed to login with GitHub. Please try again.");
         //TODO: Show error message to user
         setIsLoading(false);
         return;
@@ -55,17 +63,13 @@ export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
       >
 
 
-      <Button
-        variant="outline"
-        className="relative w-full overflow-hidden bg-white text-black border-[#24292F] hover:bg-[#f6f8fa] hover:border-[#1b1f23] dark:bg-[#24292F] dark:text-white dark:hover:bg-[#2f363d] transition-all duration-300"
+      <RainbowButton
         onClick={handleLogin}
         disabled={isLoading}
-        {...props}
+        className={`px-6 py-5 text-lg flex items-center justify-center gap-2 ${poppins.className}`}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#2463eb]/10 via-transparent to-[#2463eb]/10 opacity-0 hover:opacity-100 transition-all duration-300" />
-        <Github className="size-5 mr-2" />
         <span className="font-semibold">
-          {isLoading ? "Connecting..." : "Sign in with GitHub"}
+          {isLoading ? "Connecting..." : "Get started"}
         </span>
         {isLoading && (
           <svg
@@ -89,7 +93,7 @@ export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
             ></path>
           </svg>
         )}
-      </Button>
+      </RainbowButton>
     </motion.div>
   );
 }

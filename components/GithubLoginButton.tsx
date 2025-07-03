@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { Github } from "lucide-react";
 import { useState } from "react";
 import { motion } from "motion/react"
 import { RainbowButton } from "./magicui/rainbow-button";
@@ -14,7 +13,7 @@ const poppins = Poppins({
   weight: ["400", "500", "600", "700"],
 });
 
-export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
+export function GithubLoginButton() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -66,9 +65,9 @@ export function GithubLoginButton(props: React.ComponentProps<typeof Button>) {
       <RainbowButton
         onClick={handleLogin}
         disabled={isLoading}
-        className={`px-6 py-5 text-lg flex items-center justify-center gap-2 ${poppins.className}`}
+        className={`px-10 py-5 text-lg flex items-center justify-center gap-2 ${poppins.className}`}
       >
-        <span className="font-semibold">
+        <span className="">
           {isLoading ? "Connecting..." : "Get started"}
         </span>
         {isLoading && (

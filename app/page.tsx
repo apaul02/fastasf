@@ -2,8 +2,7 @@ import { onBoardUserAction } from "@/lib/actions";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Header } from "@/components/landing/header";
-import { TitleSection } from "@/components/landing/title-section";
+import { Landing } from "@/components/Landing";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -25,11 +24,8 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <Header />
-      <main className="flex-1 pt-16">
-        <TitleSection />
-      </main>
+    <div>
+      <Landing />
     </div>
   );
 }

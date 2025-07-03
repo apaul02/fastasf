@@ -11,15 +11,11 @@ export const TitleSection = () => {
 	const text = "A simple todo app that does simple things.".split(" ");
 
 	return (
-		// The root container for the entire page content
 		<div className="flex flex-col items-center">
 
-			{/* Section 1: Hero / Title */}
-			{/* Takes up the full screen height and centers its content both vertically and horizontally. */}
 			<section className="relative flex h-screen w-full max-w-3xl flex-col items-center justify-center text-center">
 				<div className="absolute inset-0 -z-10 h-full w-full" />
 
-				{/* Title with fade-in-up animation */}
 				<motion.h1
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
@@ -29,7 +25,6 @@ export const TitleSection = () => {
 					2DO.
 				</motion.h1>
 
-				{/* Subtitle with staggered word animation. The parent section's `text-center` handles alignment. */}
 				<motion.p className="mt-4 max-w-2xl text-lg text-muted-foreground">
 					{text.map((el, i) => (
 						<motion.span
@@ -47,17 +42,13 @@ export const TitleSection = () => {
 					))}
 				</motion.p>
 				
-				{/* Login Button */}
 				<div className="mt-8 flex items-center">
-					<GithubLoginButton size="lg" />
+					<GithubLoginButton />
 				</div>
 			</section>
 
-			{/* Section 2: Features */}
-			{/* Added vertical padding for better spacing between sections */}
 			<section className="w-full max-w-3xl py-20">
 				<div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2">
-					{/* Text content aligned left for readability */}
 					<div className="text-center md:text-left">
 						<h2 className="mb-2 text-3xl font-semibold">
 							Create, edit, delete
@@ -66,7 +57,6 @@ export const TitleSection = () => {
 							Easily manage your tasks with simple and intuitive controls.
 						</p>
 					</div>
-					{/* Image */}
 					<div>
 						<Image
 							src={"/image.png"}

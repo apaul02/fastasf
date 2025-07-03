@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Header } from "@/components/landing/header";
 import { TitleSection } from "@/components/landing/title-section";
-import { FeaturesSection } from "@/components/landing/features-section";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -24,12 +23,12 @@ export default async function Home() {
       //TODO: Show error message to user
     }
   }
+
   return (
-    <div className="container mx-auto">
+    <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="p-4 md:p-6">
+      <main className="flex-1 pt-16">
         <TitleSection />
-        <FeaturesSection />
       </main>
     </div>
   );

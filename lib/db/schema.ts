@@ -1,4 +1,6 @@
-import { pgTable, text, timestamp, boolean, integer, index } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, boolean, integer, index, pgEnum } from "drizzle-orm/pg-core";
+
+export const roleEnum = pgEnum("role", ["owner", "member"])
 
 export const user = pgTable("user", {
        id: text('id').primaryKey(),
@@ -81,3 +83,20 @@ export const comments = pgTable("comments", {
        userIdx: index("comments_user_id_idx").on(table.userId)
 }))
 
+export const workspace_members = pgTable("workspace_members", {
+  id: text("id").primaryKey(),
+  workspaceId: text("workspace_id").notNull().references(() => workspace.id, { onDelete: 'cascade' }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: 'cascade' }),
+  role: roleEnum().default("member").notNull()  // or "owner"
+}, (table) => ({
+  workspaceUserIdx: index("workspace_members_workspace_user_idx")
+    .on(table.workspaceId, table.userId),
+}));
+
+export const invites = pgTable("invites", {
+  code: text("code").primaryKey(),                // e.g. a UUID or short random string
+  workspaceId: text("workspace_id").notNull().references(() => workspace.id, { onDelete: 'cascade' }),
+  expiresAt: timestamp("expires_at").notNull(),    // optional expiry
+  createdBy: text("created_by").notNull().references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});

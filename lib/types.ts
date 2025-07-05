@@ -11,7 +11,7 @@
 //   comments?: Comments[];
 // }
 
-import { comments, todos, workspace } from "./db/schema";
+import { comments, invites, todos, workspace, workspace_members } from "./db/schema";
 
 // export interface Workspace {
 //   id: string;
@@ -34,6 +34,8 @@ import { comments, todos, workspace } from "./db/schema";
 export type TodosType = typeof todos.$inferSelect;
 export type workspaceType = typeof workspace.$inferSelect;
 export type commentsType = typeof comments.$inferSelect;
+export type InviteType = typeof invites.$inferSelect;
+export type workspaceMemberType = typeof workspace_members.$inferSelect;
 
 // export type CategoryType = {
 //   id: string;

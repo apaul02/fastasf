@@ -3,8 +3,12 @@
 import {  headers } from "next/headers"
 import { auth } from "./auth"
 import { MUTATIONS, QUERIES } from "./db/queries"
-import { commentsType, TActionResult, TodosType, workspaceType } from "./types"
+import { commentsType, TActionResult, TodosType, workspaceMemberType, workspaceType } from "./types"
 import { AuthError, DatabaseError, NotFoundError, ValidationError } from "./errors"
+import { db } from "./db"
+import { invites, workspace_members } from "./db/schema"
+import { and, eq } from "drizzle-orm"
+import { v4 as uuidv4 } from "uuid";
 
 export async function onBoardUserAction() {
   const session = await auth.api.getSession({
@@ -262,5 +266,131 @@ export async function deleteCommentAction(commentId: string): Promise<TActionRes
 
     console.error("Error in deleteCommentAction:", error);
     return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
+  }
+}
+
+export async function createInviteAction(workspaceId: string): Promise<TActionResult<{ inviteCode: string }>> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
+    }
+    const userId = session.user.id;
+
+    const isOwner = await QUERIES.checkIfUserIsOwner(workspaceId, session.user.id);
+    if (!isOwner) {
+      throw new ValidationError("Only workspace owners can create invites");
+    }
+    const invite = await MUTATIONS.createInvite(workspaceId, userId);
+    if (!invite || !invite.code) {
+      throw new DatabaseError("Failed to create invite");
+    }
+    return { success: true, data: { inviteCode: invite.code } };
+  }catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "Workspace or User not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
+    console.error("Error in createInviteAction:", error);
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
+  }
+}
+
+export async function acceptInvite(
+  code: string,
+): Promise<TActionResult<workspaceMemberType>> {
+
+  
+
+  try {
+    if (!code) {
+      throw new ValidationError("Invite code and user ID are required.");
+    }
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+    if(!session?.user) {
+      throw new AuthError()
+    }
+    const userId = session.user.id;
+
+    const newMember = await db.transaction(async (tx) => {
+      const inviteResult = await tx
+        .select()
+        .from(invites)
+        .where(eq(invites.code, code));
+
+      if (inviteResult.length === 0) {
+        throw new NotFoundError("Invite not found or has already been used.");
+      }
+      const invite = inviteResult[0];
+
+      if (invite.expiresAt < new Date()) {
+        await tx.delete(invites).where(eq(invites.code, code));
+        throw new ValidationError("This invite has expired.");
+      }
+
+      const existingMember = await tx
+        .select({ id: workspace_members.id })   
+        .from(workspace_members)
+        .where(
+          and(
+            eq(workspace_members.workspaceId, invite.workspaceId),
+            eq(workspace_members.userId, userId),
+          ),
+        )
+        .limit(1);
+
+      if (existingMember.length > 0) {
+        throw new ValidationError(
+          "You are already a member of this workspace.",
+        );
+      }
+
+      const newMemberResult = await tx
+        .insert(workspace_members)
+        .values({
+          id: uuidv4(),
+          workspaceId: invite.workspaceId,
+          userId: userId,
+          role: "member",
+        })
+        .returning();
+
+      if (newMemberResult.length === 0) {
+        throw new DatabaseError("Failed to add you to the workspace.");
+      }
+
+      await tx.delete(invites).where(eq(invites.code, code));
+
+      return newMemberResult[0];
+    });
+
+    return { success: true, data: newMember }
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "Invite not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+    if (error instanceof  ValidationError) {
+      return { success: false, error: { message: error.message, code: 'VALIDATION_ERROR'}}
+    }
+
+    console.error("Unexpected error in acceptInvite:", error);
+    throw new DatabaseError("An unexpected error occurred while joining the workspace.");
   }
 }

@@ -19,6 +19,8 @@ import { ModeToggle } from "@/components/toggle-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import Image from "next/image"
+import { GenerateInvite } from "@/components/GenerateInvite"
+import { AcceptInvite } from "@/components/AcceptInvite"
 
 const workspaceNameSchema = z.object({
   name: z.string().min(1, { message: "Please enter a workspace name" }).max(50, { message: "Workspace name must be less than 50 characters" }),
@@ -319,6 +321,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       <div className="sticky top-0 z-50 bg-background/95  backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-3">
           <Image src="/Untitled.svg" alt="Logo" width={30} height={30} />
+          <GenerateInvite workspace={props.currentWorkspace} />
+          <AcceptInvite />
           
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>

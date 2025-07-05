@@ -7,6 +7,7 @@ import { Inter } from "next/font/google";
 import { RiGithubFill } from "react-icons/ri";
 import { FaXTwitter } from "react-icons/fa6";
 import Link from "next/link";
+import { GoogleLoginButton } from "./GoogleLoginButton";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -78,6 +79,7 @@ export function Landing() {
 				
 				<div className="mt-8 flex items-center">
 					<GithubLoginButton />
+          <GoogleLoginButton />
 				</div>
         </div>
       </section>

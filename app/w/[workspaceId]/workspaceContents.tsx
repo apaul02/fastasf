@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { createWorkspaceAction, deleteWorkspaceAction, updateDueDateAction } from "@/lib/actions"
+import { createWorkspaceAction, deleteWorkspaceAction, leaveWorkspaceAction, updateDueDateAction } from "@/lib/actions"
 import { commentsType, TodosType, WorkspaceMemberWithDetails, workspaceType } from "@/lib/types"
-import { Loader2, Plus, Trash2, User2 } from "lucide-react"
+import { ArrowRightFromLine, Loader2, Plus, Trash2, User2 } from "lucide-react"
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { z } from "zod";
@@ -241,6 +241,54 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       }
     }
 
+    const handleLeaveWorkspace = async (workspaceId: string) =>  {
+      setIsDropdownOpen(false)
+      try {
+        const response = await leaveWorkspaceAction(workspaceId);
+        if(response.success) {
+          
+          console.log("Left workspace successfully:", response.data.id);
+          toast.success("left workspace successfully", {
+            description: "You have left the workspace.",
+            duration: 3000,
+            dismissible: true,
+          })
+          if(workspaceId === props.currentWorkspace.id) {
+            router.push(`/w/${props.workspaces[0].id}`);
+          }else {
+            router.refresh();
+          }
+        }else {
+          console.log(workspaceId)
+          const errorCode = response.error.code;
+          const errorMessage = response.error.message;
+          if (errorCode === 'AUTH_ERROR') {
+            toast.error("Authentication error", { description: errorMessage });
+            router.push("/");
+          }
+          else if (errorCode === 'NOT_FOUND') {
+            toast.error("Workspace not found", { description: errorMessage });
+          }
+          else if (errorCode === 'OWNERSHIP_ERROR') {
+            toast.error("Ownership error", { description: errorMessage });
+          }
+          else if (errorCode === 'DB_ERROR') {
+            toast.error("Database error", { description: errorMessage });
+          }
+          else {
+            toast.error("Failed to leave workspace", { description: errorMessage });
+          }
+        }
+      }catch(err) {
+        console.error("Error leaving workspace:", err);
+        toast.error("Failed to leave workspace", {
+          description: "An error occurred while leaving the workspace. Please try again.",
+          duration: 3000,
+          dismissible: true,
+        });
+      }
+    }
+
     const handleOptimisticTodoCreate = (newTodo: TodosType) => {
       setOptimisticTodos(prev => [...prev, newTodo]);
     }
@@ -362,19 +410,32 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                       )}
                     </DropdownMenuItem>
                     {props.workspaces.indexOf(workspace) !== 0 && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="rounded-full"
-                        disabled={workspace.userId !== props.userId}
-                        onClick={(e) => {
-                          e.stopPropagation(); 
-                          setWorkspaceToDelete(workspace.id);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="" />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-full"
+                          disabled={workspace.userId !== props.userId}
+                          onClick={(e) => {
+                            e.stopPropagation(); 
+                            setWorkspaceToDelete(workspace.id);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="rounded-full"
+                          onClick={(e) => {
+                            e.stopPropagation(); 
+                            handleLeaveWorkspace(workspace.id);
+                          }}>
+                            <ArrowRightFromLine />
+                          </Button>
+                      </div>
+                      
                     )}
                   </div>
                 ))}
@@ -495,7 +556,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       
       {/* Main content */}
       <div className="flex-1 p-4">
-        <ul>
+        <ul className={`${props.workspaceMembers.length <= 1 ? "hidden" : "flex flex-wrap gap-2 mb-4"}`}>
           {props.workspaceMembers.map((member) => (
             <li key={member.userId}>
               {member.userId === props.userId ? (

@@ -25,3 +25,10 @@ export class ValidationError extends Error {
     this.name = "ValidationError";
   }
 }
+
+export class OwnershipError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OwnershipError";
+  }
+}

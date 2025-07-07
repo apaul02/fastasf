@@ -17,6 +17,7 @@
  - [x] see list of members of the workspace
  - [ ] leave workspace
  - [ ] kick form workspace
+ - [ ] transfer ownership
  - [ ] websocket logic
  
  

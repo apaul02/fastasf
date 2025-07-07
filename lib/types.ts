@@ -47,7 +47,7 @@ export type workspaceMemberType = typeof workspace_members.$inferSelect;
 
 export type TActionResult<T> = 
   | { success: true; data: T }
-  | { success: false; error: { message: string; code?: 'AUTH_ERROR' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'UNKNOWN_ERROR' | 'DB_ERROR' }}
+  | { success: false; error: { message: string; code?: 'AUTH_ERROR' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'UNKNOWN_ERROR' | 'DB_ERROR' | 'OWNERSHIP_ERROR' } };
 
 export type WorkspaceMemberWithDetails = {
   userId: string;

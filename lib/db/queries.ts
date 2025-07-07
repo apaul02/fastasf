@@ -2,9 +2,9 @@
   import { db } from ".";
   import { v4 as uuidv4 } from "uuid";
   import { comments, invites, todos, user, workspace, workspace_members } from "./schema";
-  import { and, eq, sql } from "drizzle-orm";
+  import { and, count, eq, sql } from "drizzle-orm";
   import { commentsType, InviteType, TodosType, workspaceMemberType, WorkspaceMemberWithDetails, workspaceType } from "../types";
-  import { DatabaseError, NotFoundError, ValidationError } from "../errors";
+  import { DatabaseError, NotFoundError, OwnershipError, ValidationError } from "../errors";
 
   export const MUTATIONS = {
     createWorkspace: async function (userId: string, name: string): Promise<workspaceType> {
@@ -250,7 +250,80 @@
         console.error("Database error in addMemberToWorkspace mutation:", error);
         throw new DatabaseError("An error occurred while adding the member to the workspace.");
       }
+    },
+    leaveWorkspace: async function (
+    userId: string,
+    workspaceId: string
+  ): Promise<workspaceMemberType> {
+    try {
+      const deletedMember = await db.transaction(async (tx) => {
+        const membership = await tx
+          .select({ role: workspace_members.role })
+          .from(workspace_members)
+          .where(
+            and(
+              eq(workspace_members.userId, userId),
+              eq(workspace_members.workspaceId, workspaceId)
+            )
+          )
+          console.log("Membership found:", membership);
+
+        if (membership.length === 0) {
+          throw new NotFoundError("You are not a member of this workspace.");
+        }
+
+        if (membership[0].role === "owner") {
+          const ownerCountResult = await tx
+            .select({ value: count() })
+            .from(workspace_members)
+            .where(
+              and(
+                eq(workspace_members.workspaceId, workspaceId),
+                eq(workspace_members.role, "owner")
+              )
+            );
+
+          const ownerCount = ownerCountResult[0]?.value || 0;
+
+          if (ownerCount <= 1) {
+            throw new OwnershipError(
+              "You cannot leave as you are the last owner. Please transfer ownership or delete the workspace instead."
+            );
+          }
+        }
+
+        const deletedResult = await tx
+          .delete(workspace_members)
+          .where(
+            and(
+              eq(workspace_members.userId, userId),
+              eq(workspace_members.workspaceId, workspaceId)
+            )
+          )
+          .returning();
+
+        if (deletedResult.length === 0) {
+          throw new DatabaseError("Failed to leave the workspace.");
+        }
+
+        return deletedResult[0];
+      });
+
+      return deletedMember;
+    } catch (error) {
+      if (
+        error instanceof NotFoundError ||
+        error instanceof OwnershipError ||
+        error instanceof DatabaseError
+      ) {
+        throw error;
+      }
+
+      // Log any unexpected errors
+      console.error("Database error in leaveWorkspace mutation:", error);
+      throw new DatabaseError("An unexpected error occurred while leaving the workspace.");
     }
+  },
 
   }
 

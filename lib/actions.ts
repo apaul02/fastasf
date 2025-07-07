@@ -4,7 +4,7 @@ import {  headers } from "next/headers"
 import { auth } from "./auth"
 import { MUTATIONS, QUERIES } from "./db/queries"
 import { commentsType, TActionResult, TodosType, workspaceMemberType, workspaceType } from "./types"
-import { AuthError, DatabaseError, NotFoundError, ValidationError } from "./errors"
+import { AuthError, DatabaseError, NotFoundError, OwnershipError, ValidationError } from "./errors"
 import { db } from "./db"
 import { invites, workspace_members } from "./db/schema"
 import { and, eq } from "drizzle-orm"
@@ -396,5 +396,38 @@ export async function acceptInvite(
 
     console.error("Unexpected error in acceptInvite:", error);
     throw new DatabaseError("An unexpected error occurred while joining the workspace.");
+  }
+}
+
+export async function leaveWorkspaceAction(workspaceId: string): Promise<TActionResult<workspaceMemberType>> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
+    }
+
+    const userId = session.user.id;
+
+    const leftWorkspace = await MUTATIONS.leaveWorkspace(workspaceId, userId);
+    return { success: true, data: leftWorkspace };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: error.message, code: 'NOT_FOUND' } };
+    }
+    if (error instanceof OwnershipError) {
+      return { success: false, error: { message: error.message, code: 'OWNERSHIP_ERROR' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
+    console.error("Error in leaveWorkspaceAction:", error);
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
 }

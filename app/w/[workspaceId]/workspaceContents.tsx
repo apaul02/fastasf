@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { createWorkspaceAction, deleteWorkspaceAction, updateDueDateAction } from "@/lib/actions"
-import { commentsType, TodosType, workspaceType } from "@/lib/types"
+import { commentsType, TodosType, WorkspaceMemberWithDetails, workspaceType } from "@/lib/types"
 import { Loader2, Plus, Trash2, User2 } from "lucide-react"
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
@@ -32,7 +32,7 @@ const getStartOfDay = (date: Date) => {
   return newDate;
 }
 
-export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[], image?: string | null}) {
+export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[], image?: string | null, userId: string, workspaceMembers: WorkspaceMemberWithDetails[] }) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
@@ -45,6 +45,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [optimisticTodos, setOptimisticTodos] = useState<TodosType[]>(props.todos);
   const [isMobile, setIsMobile] = useState(false);
   const [isWorkspceDeleting, setIsWorkspaceDeleting] = useState(false);
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -194,7 +195,14 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         if(response.success) {
           console.log("Workspace deleted successfully:", response.data.id);
           if (response.data.id === props.currentWorkspace.id) {
-            router.push(`/w/${props.workspaces[0].id}`);
+            const remainingWorkspaces = props.workspaces.filter(ws => ws.id !== response.data.id);
+            const personalWorkspace = remainingWorkspaces.find(ws => ws.name === "Personal") || remainingWorkspaces[0];
+            
+            if (personalWorkspace?.id) {
+              router.push(`/w/${personalWorkspace.id}`);
+            } else {
+              router.push("/");
+            }
           }
           router.refresh();
           toast.success("Workspace deleted successfully", {
@@ -358,6 +366,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                         variant="ghost" 
                         size="icon" 
                         className="rounded-full"
+                        disabled={workspace.userId !== props.userId}
                         onClick={(e) => {
                           e.stopPropagation(); 
                           setWorkspaceToDelete(workspace.id);
@@ -439,7 +448,15 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
               {workspaceToDelete === props.workspaces[0]?.id ? (
                 <p className="text-red-500 font-medium">Cannot delete personal workspace</p>
               ) : (
-                <p>This action cannot be undone.</p>
+                <>
+                  {(() => {
+                    const workspace = props.workspaces.find(w => w.id === workspaceToDelete);
+                    if (workspace && workspace.userId !== props.userId) {
+                      return <p className="text-red-500 font-medium">Only the workspace owner can delete this workspace</p>;
+                    }
+                    return <p>This action cannot be undone.</p>;
+                  })()}
+                </>
               )}
             </DialogHeader>
             <div className="flex justify-end">
@@ -447,10 +464,17 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                 variant={"destructive"} 
                 onClick={() => {
                   if (workspaceToDelete && workspaceToDelete !== props.workspaces[0]?.id) {
-                    handleDeleteWorkspace(workspaceToDelete);
+                    const workspace = props.workspaces.find(w => w.id === workspaceToDelete);
+                    if (workspace && workspace.userId === props.userId) {
+                      handleDeleteWorkspace(workspaceToDelete);
+                    }
                   }
                 }}
-                disabled={workspaceToDelete === props.workspaces[0]?.id || isWorkspceDeleting}
+                disabled={(() => {
+                  if (workspaceToDelete === props.workspaces[0]?.id || isWorkspceDeleting) return true;
+                  const workspace = props.workspaces.find(w => w.id === workspaceToDelete);
+                  return workspace ? workspace.userId !== props.userId : true;
+                })()}
               >
                 {isWorkspceDeleting ? (
                   <>
@@ -471,6 +495,17 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       
       {/* Main content */}
       <div className="flex-1 p-4">
+        <ul>
+          {props.workspaceMembers.map((member) => (
+            <li key={member.userId}>
+              {member.userId === props.userId ? (
+                <span className="font-bold">You</span>
+              ) : (
+                <span className="font-semibold">{member.name}</span>
+              )}
+            </li>
+          ))}
+        </ul>
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-20">
             <div className="flex flex-col w-full md:w-1/3">

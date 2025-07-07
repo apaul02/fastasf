@@ -191,6 +191,10 @@ export async function deleteWorkspaceAction(workspaceId: string): Promise<TActio
     if (!session?.user) {
       throw new AuthError();
     }
+    const isOwner = await QUERIES.checkIfUserIsOwner(workspaceId, session.user.id);
+    if (!isOwner) {
+      throw new ValidationError("Only workspace owners can delete the workspace");
+    }
 
     const deletedWorkspace = await MUTATIONS.deleteWorkspace(workspaceId);
     return { success: true, data: deletedWorkspace };

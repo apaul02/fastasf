@@ -87,16 +87,16 @@ export const workspace_members = pgTable("workspace_members", {
   id: text("id").primaryKey(),
   workspaceId: text("workspace_id").notNull().references(() => workspace.id, { onDelete: 'cascade' }),
   userId: text("user_id").notNull().references(() => user.id, { onDelete: 'cascade' }),
-  role: roleEnum().default("member").notNull()  // or "owner"
+  role: roleEnum().default("member").notNull() 
 }, (table) => ({
   workspaceUserIdx: index("workspace_members_workspace_user_idx")
     .on(table.workspaceId, table.userId),
 }));
 
 export const invites = pgTable("invites", {
-  code: text("code").primaryKey(),                // e.g. a UUID or short random string
+  code: text("code").primaryKey(),                
   workspaceId: text("workspace_id").notNull().references(() => workspace.id, { onDelete: 'cascade' }),
-  expiresAt: timestamp("expires_at").notNull(),    // optional expiry
+  expiresAt: timestamp("expires_at").notNull(),   
   createdBy: text("created_by").notNull().references(() => user.id, { onDelete: 'cascade' }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

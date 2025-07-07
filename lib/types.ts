@@ -48,3 +48,11 @@ export type workspaceMemberType = typeof workspace_members.$inferSelect;
 export type TActionResult<T> = 
   | { success: true; data: T }
   | { success: false; error: { message: string; code?: 'AUTH_ERROR' | 'NOT_FOUND' | 'VALIDATION_ERROR' | 'UNKNOWN_ERROR' | 'DB_ERROR' }}
+
+export type WorkspaceMemberWithDetails = {
+  userId: string;
+  name: string;
+  email: string;
+  image: string | null; // Based on your schema, image can be null
+  role: "owner" | "member"; // From your roleEnum
+};

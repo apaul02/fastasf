@@ -1,9 +1,9 @@
   import "server-only";
   import { db } from ".";
   import { v4 as uuidv4 } from "uuid";
-  import { comments, invites, todos, workspace, workspace_members } from "./schema";
+  import { comments, invites, todos, user, workspace, workspace_members } from "./schema";
   import { and, eq, sql } from "drizzle-orm";
-  import { commentsType, InviteType, TodosType, workspaceMemberType, workspaceType } from "../types";
+  import { commentsType, InviteType, TodosType, workspaceMemberType, WorkspaceMemberWithDetails, workspaceType } from "../types";
   import { DatabaseError, NotFoundError, ValidationError } from "../errors";
 
   export const MUTATIONS = {
@@ -322,5 +322,24 @@ getUserWorkspaces: async function (userId: string): Promise<workspaceType[]> {
         throw new DatabaseError("An error occurred while checking the invite.");
       }
       
+    },
+    getWorkspaceMembers: async function (
+    workspaceId: string
+  ): Promise<WorkspaceMemberWithDetails[]> {
+    if (!workspaceId) {
+      return [];
     }
+
+    return await db
+      .select({
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        role: workspace_members.role,
+      })
+      .from(workspace_members)
+      .innerJoin(user, eq(workspace_members.userId, user.id))
+      .where(eq(workspace_members.workspaceId, workspaceId));
+  },
   }

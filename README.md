@@ -10,8 +10,13 @@
  
  ## Sharing
  - [ ] better ui
- - [ ] member should not be able to delete other's workspace
+ - [x] member should not be able to delete other's workspace
  - [ ] will not be able to share the personal workspace
- - [ ] make sure personal workspace cant be deleted
+ - [x] make sure personal workspace cant be deleted
+ - [ ] when the owner deletes the workspace, and if the member is on the workspace redirect the member to his personal workspace
+ - [x] see list of members of the workspace
+ - [ ] leave workspace
+ - [ ] kick form workspace
  - [ ] websocket logic
+ 
  

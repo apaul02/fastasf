@@ -15,15 +15,16 @@ export default async function WorkspacePage(props: { params: Promise<{workspaceI
 
   const params = await props.params;
 
-  const [ currentWorkspace, allWorkspaces, todos, comments ] = await Promise.all([
+  const [ currentWorkspace, allWorkspaces, todos, comments, members ] = await Promise.all([
     QUERIES.getWorkspaceById(params.workspaceId),
     QUERIES.getUserWorkspaces(session.user.id),
     QUERIES.getTodosByWorkSpaceId(params.workspaceId),
-    QUERIES.getCommentsByUserId(session.user.id)
+    QUERIES.getCommentsByUserId(session.user.id),
+    QUERIES.getWorkspaceMembers(params.workspaceId)
   ]);
   return (
     <main>
-      <WorkspaceContents workspaces={allWorkspaces} currentWorkspace={currentWorkspace} todos={todos} comments={comments} image={session.user.image} />
+      <WorkspaceContents workspaces={allWorkspaces} currentWorkspace={currentWorkspace} todos={todos} comments={comments} image={session.user.image} userId={session.user.id} workspaceMembers={members} />
     </main>
   )
 

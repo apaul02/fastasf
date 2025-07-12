@@ -9,7 +9,7 @@ import { commentsType, TodosType } from "@/lib/types";
 import { add, format, isBefore, isToday, isTomorrow, parse } from "date-fns";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "motion/react";
 
@@ -45,10 +45,6 @@ export function TodoCard(props: { todo: TodosType, optimisticMarkTodo: (todo: To
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isDeletingComment, setIsDeletingComment] = useState(false);
   
-
-  useEffect(() => {
-    setOptimisticComments(props.comments);
-  }, [props.comments]);
 
   async function handleCommentSubmit() {
     if(commentContent.trim() === "" || isSubmittingComment) {

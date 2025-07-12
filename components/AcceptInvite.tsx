@@ -16,7 +16,7 @@ import { acceptInvite } from "@/lib/actions"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-export function AcceptInvite() {
+export function AcceptInvite(props: { disabled?: boolean }) {
   const [code, setCode] = useState("")
   const router = useRouter();
   const handleInviteCodeChange = async () => {
@@ -44,7 +44,7 @@ export function AcceptInvite() {
   return (
     <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline">Open Dialog</Button>
+          <Button variant="outline" disabled={props.disabled}>Open Dialog</Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>

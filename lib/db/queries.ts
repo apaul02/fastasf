@@ -351,6 +351,7 @@ getUserWorkspaces: async function (userId: string): Promise<workspaceType[]> {
         .select()
         .from(workspace)
         .where(eq(workspace.id, workspaceId));
+      console.log("Workspace query result:", result);
       return result[0];
     },
     getCommentsByUserId: async function (userId: string) {

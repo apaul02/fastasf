@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { createWorkspaceAction, deleteWorkspaceAction, leaveWorkspaceAction, updateDueDateAction } from "@/lib/actions"
 import { commentsType, TodosType, WorkspaceMemberWithDetails, workspaceType } from "@/lib/types"
 import { ArrowRightFromLine, Loader2, Plus, Trash2, User2 } from "lucide-react"
-import { useRouter } from "next/navigation";
+import { notFound, redirect, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { z } from "zod";
 import { add, endOfDay, isBefore, isToday, parse, format } from "date-fns"
@@ -35,7 +35,8 @@ const getStartOfDay = (date: Date) => {
 export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[], image?: string | null, userId: string, workspaceMembers: WorkspaceMemberWithDetails[] }) {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
+  // const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
+  const [activeWorkspace, setActiveWorkspace] = useState<workspaceType>(props.currentWorkspace);
   const [isNewWorkspaceDialogOpen, setIsNewWorkspaceDialogOpen] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -55,28 +56,23 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  if(!props.workspaces || Object.keys(props.workspaces).length === 0) {
+    notFound();
+  }
   
-  useEffect(() => {
-    props.workspaces.forEach(workspace => {
-      router.prefetch(`/w/${workspace.id}`);
-    });
-  }, [props.workspaces, router]);
 
-  useEffect(() => {
-    setOptimisticTodos(props.todos);
-  }, [props.todos]);
-
-
-  const handleWorkspaceChange = (workspaceId: string) => {
-    if (workspaceId === activeWorkspaceId) return;
+  const handleWorkspaceChange = (workspace: workspaceType) => {
+    if (workspace.id ===  activeWorkspace.id) return;
     
     setIsNavigating(true);
-    setActiveWorkspaceId(workspaceId);
+    setActiveWorkspace(workspace);
     
-    router.push(`/w/${workspaceId}`);
+    router.push(`/w/${workspace.id}`);
   };
 
-  const handleCreateWorkspace = async () => {
+
+const handleCreateWorkspace = async () => {
       setIsLoading(true);
       try {
         const validation = workspaceNameSchema.safeParse({ name: workspaceName });
@@ -130,6 +126,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
         setIsLoading(false);
       }
     }
+
 
 
     const categorizeTodos = useMemo(() => {
@@ -243,6 +240,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
 
     const handleLeaveWorkspace = async (workspaceId: string) =>  {
       setIsDropdownOpen(false)
+      console.log("Leaving workspace:", workspaceId);
       try {
         const response = await leaveWorkspaceAction(workspaceId);
         if(response.success) {
@@ -377,8 +375,8 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
       <div className="sticky top-0 z-50 bg-background/95  backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-3">
           <Image src="/Untitled.svg" alt="Logo" width={30} height={30} />
-          <GenerateInvite workspace={props.currentWorkspace} />
-          <AcceptInvite />
+          <GenerateInvite workspace={props.currentWorkspace} disabled={isNavigating || isLoading} />
+          <AcceptInvite  disabled={isNavigating || isLoading}/>
           
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -390,7 +388,7 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                       Switching...
                     </>
                   ) : (
-                    props.currentWorkspace.name
+                    activeWorkspace.name
                   )}
                 </Button>
               </DropdownMenuTrigger>
@@ -400,12 +398,12 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
                     
                     <DropdownMenuItem 
                       key={workspace.id}
-                      onClick={() => handleWorkspaceChange(workspace.id)}
+                      onClick={() => handleWorkspaceChange(workspace)}
                       disabled={isNavigating}
                       className="w-full"
                     >
                       {workspace.name}
-                      {isNavigating && activeWorkspaceId === workspace.id && (
+                      {isNavigating && activeWorkspace.id === workspace.id && (
                         <Loader2 className="ml-2 h-4 w-4 animate-spin" />
                       )}
                     </DropdownMenuItem>

@@ -410,8 +410,7 @@ export async function leaveWorkspaceAction(workspaceId: string): Promise<TAction
     }
 
     const userId = session.user.id;
-
-    const leftWorkspace = await MUTATIONS.leaveWorkspace(workspaceId, userId);
+    const leftWorkspace = await MUTATIONS.leaveWorkspace(userId, workspaceId);
     return { success: true, data: leftWorkspace };
   } catch (error) {
     if (error instanceof AuthError) {

@@ -8,7 +8,7 @@ import { createInviteAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-export function GenerateInvite(props: { workspace: workspaceType } ) {
+export function GenerateInvite(props: { workspace: workspaceType, disabled?: boolean } ) {
   const [code, setCode] = useState("");
   const router = useRouter();
   const handleGenerateCode =  async () => {
@@ -47,7 +47,7 @@ export function GenerateInvite(props: { workspace: workspaceType } ) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant={"outline"}>Open Dialog</Button>
+        <Button variant={"outline"} disabled={props.disabled}>Open Dialog</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>

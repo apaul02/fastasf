@@ -1,8 +1,8 @@
-import { onBoardUserAction } from "@/lib/actions";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Landing } from "@/components/Landing";
+import { onBoardUserAction } from "@/lib/actions";
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -24,8 +24,9 @@ export default async function Home() {
   }
 
   return (
-    <div>
-      <Landing />
-    </div>
+	<div>
+		<Landing />
+		
+	</div>
   );
 }

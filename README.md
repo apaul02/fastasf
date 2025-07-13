@@ -15,9 +15,9 @@
  - [x] make sure personal workspace cant be deleted
  - [ ] when the owner deletes the workspace, and if the member is on the workspace redirect the member to his personal workspace
  - [x] see list of members of the workspace
- - [ ] leave workspace
- - [ ] kick form workspace
+ - [x] leave workspace
+ - [x] kick form workspace
  - [ ] transfer ownership
  - [ ] websocket logic
- 
+
  

@@ -1,14 +1,14 @@
 "use client"
+import React, { useState } from "react";
 import { workspaceType } from "@/lib/types";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { useState } from "react";
 import { createInviteAction } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
-export function GenerateInvite(props: { workspace: workspaceType, disabled?: boolean } ) {
+export function GenerateInvite(props: { workspace: workspaceType, disabled?: boolean, children?: React.ReactNode } ) {
   const [code, setCode] = useState("");
   const router = useRouter();
   const handleGenerateCode =  async () => {
@@ -47,7 +47,7 @@ export function GenerateInvite(props: { workspace: workspaceType, disabled?: boo
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant={"outline"} disabled={props.disabled}>Open Dialog</Button>
+        {props.children || <Button variant={"outline"} disabled={props.disabled}>Share Workspace</Button>}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
       <DialogHeader>
@@ -60,14 +60,29 @@ export function GenerateInvite(props: { workspace: workspaceType, disabled?: boo
       </DialogHeader>
       <div className="grid gap-4">
         <div className="grid gap-3">
-          <Input readOnly placeholder="Workspace ID" value={code} />
+          <div className="flex gap-2">
+            <Input readOnly placeholder="Workspace ID" value={code} className="flex-1" />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => {
+                if (code) {
+                  navigator.clipboard.writeText(code);
+                  toast.success("Invite code copied to clipboard!");
+                }
+              }}
+              disabled={!code}
+            >
+              Copy
+            </Button>
+          </div>
         </div>
       </div>
       <DialogFooter>
         <DialogClose asChild>
           <Button variant={"outline"}>Close</Button>
         </DialogClose>
-        <Button onClick={handleGenerateCode} >code</Button>
+        <Button onClick={handleGenerateCode} >Generate Code</Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>

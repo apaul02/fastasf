@@ -1,4 +1,4 @@
-  import "server-only";
+import "server-only";
   import { db } from ".";
   import { v4 as uuidv4 } from "uuid";
   import { comments, invites, todos, user, workspace, workspace_members } from "./schema";
@@ -324,6 +324,67 @@
       throw new DatabaseError("An unexpected error occurred while leaving the workspace.");
     }
   },
+  kickMemberFromWorkspace: async function (kickerId: string, workspaceId: string, memberId: string): Promise<workspaceMemberType> {
+    try {
+      return await db.transaction(async (tx) => {
+        const isKickerOwner = await tx
+          .select({role: workspace_members.role})  
+          .from(workspace_members)
+          .where(
+            and(
+              eq(workspace_members.userId, kickerId),
+              eq(workspace_members.workspaceId, workspaceId)
+            )
+          );
+        if(isKickerOwner.length === 0 || isKickerOwner[0].role !== "owner") {
+          throw new OwnershipError("You must be an owner to kick a member from the workspace.");
+        }
+        const isMember = await tx
+          .select({role: workspace_members.role})
+          .from(workspace_members)
+          .where(
+            and(
+              eq(workspace_members.userId, memberId),
+              eq(workspace_members.workspaceId, workspaceId)
+            )
+          );
+        if(isMember.length === 0) {
+          throw new NotFoundError("Member to kick was not found in the workspace.");
+        }
+        if(kickerId === memberId) {
+          throw new ValidationError("You cannot kick yourself from the workspace.");
+        }
+
+        const deletedMember = await tx
+          .delete(workspace_members)
+          .where(
+            and(
+              eq(workspace_members.userId, memberId),
+              eq(workspace_members.workspaceId, workspaceId)
+            )
+          )
+          .returning();
+        if(deletedMember.length === 0) {
+          throw new DatabaseError("Failed to kick the member from the workspace.");
+        }
+        return deletedMember[0];
+      })
+    }catch (error) {
+      if (
+        error instanceof NotFoundError ||
+        error instanceof OwnershipError ||
+        error instanceof ValidationError ||
+        error instanceof DatabaseError
+      ) {
+        throw error;
+      }
+
+      // Log any unexpected errors
+      console.error("Database error in kickMemberFromWorkspace mutation:", error);
+      throw new DatabaseError("An unexpected error occurred while kicking the member from the workspace.");
+    }
+
+  }
 
   }
 
@@ -373,7 +434,14 @@ getUserWorkspaces: async function (userId: string): Promise<workspaceType[]> {
         eq(workspace_members.workspaceId, workspaceId),
         eq(workspace_members.userId, userId)
       ))
-      return !!result;
+      return result.length > 0;
+    },
+    getWorkspaceMembership: async function (userId: string, workspaceId: string) {
+      const result = await db.select().from(workspace_members).where(and(
+        eq(workspace_members.workspaceId, workspaceId),
+        eq(workspace_members.userId, userId)
+      ))
+      return result[0];
     },
     checkIfInviteExistsOrExpired: async function (code: string) {
       try {

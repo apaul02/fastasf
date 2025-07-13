@@ -1,4 +1,5 @@
 "use client"
+import React, { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -11,12 +12,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { acceptInvite } from "@/lib/actions"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
 
-export function AcceptInvite(props: { disabled?: boolean }) {
+export function AcceptInvite(props: { disabled?: boolean, children?: React.ReactNode }) {
   const [code, setCode] = useState("")
   const router = useRouter();
   const handleInviteCodeChange = async () => {
@@ -44,27 +43,29 @@ export function AcceptInvite(props: { disabled?: boolean }) {
   return (
     <Dialog>
         <DialogTrigger asChild>
-          <Button variant="outline" disabled={props.disabled}>Open Dialog</Button>
+          {props.children || (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" className="w-full flex" disabled={props.disabled}>Join workspace</Button>
+            </div>
+          )}
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Edit profile</DialogTitle>
+            <DialogTitle>Join Workspace</DialogTitle>
             <DialogDescription>
-              Make changes to your profile here. Click save when you&apos;re
-              done.
+              Join a workspace by entering the invite code
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
             <div className="grid gap-3">
-              <Label >code</Label>
-              <Input  name="code" value={code} onChange={e => setCode(e.target.value)} placeholder="code"  />
+              <Input  name="code" value={code} className="py-2" onChange={e => setCode(e.target.value)} placeholder="code"  />
             </div>
           </div>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button onClick={handleInviteCodeChange}>goooo</Button>
+            <Button onClick={handleInviteCodeChange}>Join</Button>
           </DialogFooter>
         </DialogContent>
     </Dialog>

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
-import { createWorkspaceAction, deleteWorkspaceAction, leaveWorkspaceAction, updateDueDateAction } from "@/lib/actions"
+import { createWorkspaceAction, deleteWorkspaceAction, kickFromWorkspaceAction, leaveWorkspaceAction, updateDueDateAction, checkWorkspaceMembershipAction } from "@/lib/actions"
 import { commentsType, TodosType, WorkspaceMemberWithDetails, workspaceType } from "@/lib/types"
-import { ArrowRightFromLine, Loader2, Plus, Trash2, User2 } from "lucide-react"
-import { notFound, redirect, useRouter } from "next/navigation";
+import { Share2, ArrowRightFromLine, Loader2, Plus, Trash2, User2 } from "lucide-react"
+import { notFound, useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { z } from "zod";
 import { add, endOfDay, isBefore, isToday, parse, format } from "date-fns"
@@ -34,8 +34,9 @@ const getStartOfDay = (date: Date) => {
 
 export function WorkspaceContents(props: { workspaces: workspaceType[], currentWorkspace: workspaceType, todos: TodosType[], comments: commentsType[], image?: string | null, userId: string, workspaceMembers: WorkspaceMemberWithDetails[] }) {
   const router = useRouter();
+  
+  // All useState hooks must be declared before any conditional logic
   const [isNavigating, setIsNavigating] = useState(false);
-  // const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>(props.currentWorkspace.id);
   const [activeWorkspace, setActiveWorkspace] = useState<workspaceType>(props.currentWorkspace);
   const [isNewWorkspaceDialogOpen, setIsNewWorkspaceDialogOpen] = useState(false);
   const [workspaceName, setWorkspaceName] = useState("");
@@ -46,7 +47,150 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
   const [optimisticTodos, setOptimisticTodos] = useState<TodosType[]>(props.todos);
   const [isMobile, setIsMobile] = useState(false);
   const [isWorkspceDeleting, setIsWorkspaceDeleting] = useState(false);
+  const [isKickDialogOpen, setIsKickDialogOpen] = useState(false);
+  const [memberToKick, setMemberToKick] = useState<{ userId: string; name: string }>({ userId: "", name: "" });
+  const [isKicking, setIsKicking] = useState(false);
 
+  // Safeguard: If currentWorkspace is undefined, redirect to personal workspace
+  useEffect(() => {
+    if (!props.currentWorkspace) {
+      console.log("Current workspace is undefined, redirecting to personal workspace");
+      const personalWorkspace = props.workspaces?.find(ws => ws.name === "Personal") || props.workspaces?.[0];
+      if (personalWorkspace?.id) {
+        router.push(`/w/${personalWorkspace.id}`);
+      } else {
+        router.push("/");
+      }
+      return;
+    }
+  }, [props.currentWorkspace, props.workspaces, router]);
+
+  // Check if user is still member of current workspace (for auto-redirect when kicked)
+  useEffect(() => {
+    // Don't run membership checks if currentWorkspace is undefined
+    if (!props.currentWorkspace?.id) {
+      return;
+    }
+
+    let interval: NodeJS.Timeout;
+    
+    const checkWorkspaceMembership = async () => {
+      try {
+        const response = await checkWorkspaceMembershipAction(props.currentWorkspace.id);
+        
+        if (response.success && !response.data.isMember && props.currentWorkspace.name !== "Personal") {
+          console.log("User is no longer a member of this workspace, redirecting to personal workspace");
+          toast.info("You have been removed from this workspace", {
+            description: "Redirecting to your personal workspace",
+            duration: 4000,
+            dismissible: true,
+          });
+          
+          // Find personal workspace or first workspace
+          const personalWorkspace = props.workspaces.find(ws => ws.name === "Personal") || props.workspaces[0];
+          if (personalWorkspace?.id) {
+            router.push(`/w/${personalWorkspace.id}`);
+          } else {
+            router.push("/");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking workspace membership:", error);
+      }
+    };
+
+    const startPolling = () => {
+      interval = setInterval(checkWorkspaceMembership, 5000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+
+    // Start polling when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopPolling();
+      } else {
+        checkWorkspaceMembership(); // Check immediately when page becomes visible
+        startPolling();
+      }
+    };
+
+    // Listen for kick events and workspace deletion events from localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `workspace-kick-${props.currentWorkspace?.id}`) {
+        console.log("Kick event detected for this workspace, checking membership");
+        checkWorkspaceMembership();
+      } else if (e.key === `workspace-delete-${props.currentWorkspace?.id}`) {
+        console.log("Workspace deletion event detected, redirecting to personal workspace");
+        toast.info("This workspace has been deleted", {
+          description: "Redirecting to your personal workspace",
+          duration: 4000,
+          dismissible: true,
+        });
+        
+        // Find personal workspace or first workspace
+        const personalWorkspace = props.workspaces.find(ws => ws.name === "Personal") || props.workspaces[0];
+        if (personalWorkspace?.id) {
+          router.push(`/w/${personalWorkspace.id}`);
+        } else {
+          router.push("/");
+        }
+      }
+    };
+
+    // Add event listeners
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Start polling if page is visible
+    if (!document.hidden) {
+      startPolling();
+    }
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [props.currentWorkspace?.id, props.currentWorkspace?.name, props.workspaces, router]);
+
+  // Initial check on component mount
+  useEffect(() => {
+    // Don't run initial check if currentWorkspace is undefined
+    if (!props.currentWorkspace?.id) {
+      return;
+    }
+
+    const initialCheck = async () => {
+      try {
+        const response = await checkWorkspaceMembershipAction(props.currentWorkspace.id);
+        
+        if (response.success && !response.data.isMember && props.currentWorkspace.name !== "Personal") {
+          console.log("User is not a member of this workspace on mount, redirecting");
+          toast.info("You are not a member of this workspace", {
+            description: "Redirecting to your personal workspace",
+            duration: 4000,
+            dismissible: true,
+          });
+          
+          const personalWorkspace = props.workspaces.find(ws => ws.name === "Personal") || props.workspaces[0];
+          if (personalWorkspace?.id) {
+            router.push(`/w/${personalWorkspace.id}`);
+          } else {
+            router.push("/");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking initial workspace membership:", error);
+      }
+    };
+
+    initialCheck();
+  }, []); // Only run on mount
 
   useEffect(() => {
     const handleResize = () => {
@@ -56,6 +200,68 @@ export function WorkspaceContents(props: { workspaces: workspaceType[], currentW
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  const categorizeTodos = useMemo(() => {
+    const today = getStartOfDay(new Date());
+    const nextSevenDays = endOfDay(add(today, { days: 7 }));
+
+    const overdueTodayNoDateTodos: TodosType[] = [];
+    const nextSevenDaysTodos: TodosType[] = [];
+    const upcomingTodosList: TodosType[] = [];
+
+    optimisticTodos.forEach(todo => {
+      if(todo.completed) {
+        return;
+      }
+
+      if(!todo.dueDate) {
+        overdueTodayNoDateTodos.push(todo);
+        return;
+      }
+
+      const parsedDate = parse(todo.dueDate,"yyyy-MM-dd'T'HH:mm:ss", new Date())
+
+      if(isBefore(parsedDate, today)) {
+        overdueTodayNoDateTodos.push(todo);
+      } else if(isToday(parsedDate)) {
+        overdueTodayNoDateTodos.push(todo);
+      }
+      else if(isBefore(parsedDate, nextSevenDays)) {
+        nextSevenDaysTodos.push(todo);
+      }else {
+        upcomingTodosList.push(todo);
+      }
+    })
+    return [
+      {
+        id: "overdueTodayNoDateTodos",
+        title: "Overdue / Today",
+        todos: overdueTodayNoDateTodos
+      },
+      {
+        id: "nextSevenDaysTodos",
+        title: "Next 7 Days",
+        todos: nextSevenDaysTodos
+      },
+      {
+        id: "upcomingTodosList",
+        title: "Upcoming",
+        todos: upcomingTodosList
+      }
+    ]
+  }, [optimisticTodos]);
+
+  // Early return if currentWorkspace is undefined to prevent rendering errors
+  if (!props.currentWorkspace) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Redirecting...</p>
+        </div>
+      </div>
+    );
+  }
 
   if(!props.workspaces || Object.keys(props.workspaces).length === 0) {
     notFound();
@@ -127,58 +333,6 @@ const handleCreateWorkspace = async () => {
       }
     }
 
-
-
-    const categorizeTodos = useMemo(() => {
-      const today = getStartOfDay(new Date());
-      const nextSevenDays = endOfDay(add(today, { days: 7 }));
-
-      const overdueTodayNoDateTodos: TodosType[] = [];
-      const nextSevenDaysTodos: TodosType[] = [];
-      const upcomingTodosList: TodosType[] = [];
-
-      optimisticTodos.forEach(todo => {
-        if(todo.completed) {
-          return;
-        }
-
-        if(!todo.dueDate) {
-          overdueTodayNoDateTodos.push(todo);
-          return;
-        }
-
-        const parsedDate = parse(todo.dueDate,"yyyy-MM-dd'T'HH:mm:ss", new Date())
-
-        if(isBefore(parsedDate, today)) {
-          overdueTodayNoDateTodos.push(todo);
-        } else if(isToday(parsedDate)) {
-          overdueTodayNoDateTodos.push(todo);
-        }
-        else if(isBefore(parsedDate, nextSevenDays)) {
-          nextSevenDaysTodos.push(todo);
-        }else {
-          upcomingTodosList.push(todo);
-        }
-      })
-      return [
-        {
-          id: "overdueTodayNoDateTodos",
-          title: "Overdue / Today",
-          todos: overdueTodayNoDateTodos
-        },
-        {
-          id: "nextSevenDaysTodos",
-          title: "Next 7 Days",
-          todos: nextSevenDaysTodos
-        },
-        {
-          id: "upcomingTodosList",
-          title: "Upcoming",
-          todos: upcomingTodosList
-        }
-      ]
-    }, [optimisticTodos]);
-
     const handleDeleteWorkspace = async (workspaceId: string) => {
       setIsWorkspaceDeleting(true);
       if (workspaceId === props.workspaces[0].id) {
@@ -191,6 +345,15 @@ const handleCreateWorkspace = async () => {
         const response = await deleteWorkspaceAction(workspaceId);
         if(response.success) {
           console.log("Workspace deleted successfully:", response.data.id);
+          
+          // Trigger workspace deletion event for all users in this workspace
+          localStorage.setItem(`workspace-delete-${workspaceId}`, Date.now().toString());
+          
+          // Clean up the localStorage entry after 10 seconds
+          setTimeout(() => {
+            localStorage.removeItem(`workspace-delete-${workspaceId}`);
+          }, 10000);
+          
           if (response.data.id === props.currentWorkspace.id) {
             const remainingWorkspaces = props.workspaces.filter(ws => ws.id !== response.data.id);
             const personalWorkspace = remainingWorkspaces.find(ws => ws.name === "Personal") || remainingWorkspaces[0];
@@ -287,6 +450,62 @@ const handleCreateWorkspace = async () => {
       }
     }
 
+    const handleKickFromWorkspace = async (workspaceId: string, userId: string) => {
+      setIsKicking(true);
+      console.log("Kicking user:", userId, "from workspace:", workspaceId);
+      try {
+        const response = await kickFromWorkspaceAction(workspaceId, userId);
+        if(response.success) {
+          console.log("User kicked successfully from workspace:", response.data.id);
+          toast.success("User kicked successfully", {
+            description: "The user has been removed from the workspace.",
+            duration: 3000,
+            dismissible: true,
+          });
+          
+          // Trigger immediate membership check for all users in this workspace
+          localStorage.setItem(`workspace-kick-${workspaceId}`, Date.now().toString());
+          
+          // Clean up the localStorage entry after 10 seconds to prevent buildup
+          setTimeout(() => {
+            localStorage.removeItem(`workspace-kick-${workspaceId}`);
+          }, 10000);
+          
+          router.refresh();
+        }else {
+          const errorCode = response.error.code;
+          const errorMessage = response.error.message;
+          if (errorCode === 'AUTH_ERROR') {
+            toast.error("Authentication error", { description: errorMessage });
+            router.push("/");
+          }
+          else if (errorCode === 'NOT_FOUND') {
+            toast.error("Workspace or user not found", { description: errorMessage });
+          }
+          else if (errorCode === 'OWNERSHIP_ERROR') {
+            toast.error("Ownership error", { description: errorMessage });
+          }
+          else if (errorCode === 'DB_ERROR') {
+            toast.error("Database error", { description: errorMessage });
+          }
+          else {
+            toast.error("Failed to kick user from workspace", { description: errorMessage });
+          }
+        }
+      }catch(err) {
+        console.error("Error kicking user from workspace:", err);
+        toast.error("Failed to kick user from workspace", {
+          description: "An error occurred while removing the user. Please try again.",
+          duration: 3000,
+          dismissible: true,
+        });
+      }finally {
+        setIsKicking(false);
+        setIsKickDialogOpen(false);
+        setMemberToKick({ userId: "", name: "" });
+      }
+    }
+
     const handleOptimisticTodoCreate = (newTodo: TodosType) => {
       setOptimisticTodos(prev => [...prev, newTodo]);
     }
@@ -375,8 +594,6 @@ const handleCreateWorkspace = async () => {
       <div className="sticky top-0 z-50 bg-background/95  backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-3">
           <Image src="/Untitled.svg" alt="Logo" width={30} height={30} />
-          <GenerateInvite workspace={props.currentWorkspace} disabled={isNavigating || isLoading} />
-          <AcceptInvite  disabled={isNavigating || isLoading}/>
           
           <Dialog open={isNewWorkspaceDialogOpen} onOpenChange={setIsNewWorkspaceDialogOpen}>
             <DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
@@ -392,15 +609,15 @@ const handleCreateWorkspace = async () => {
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent>
+              <DropdownMenuContent className="min-w-[200px]">
                 {props.workspaces.map((workspace) => (
-                  <div key={workspace.id} className="flex justify-between ">
+                  <div key={workspace.id} className="flex justify-between items-center">
                     
                     <DropdownMenuItem 
                       key={workspace.id}
                       onClick={() => handleWorkspaceChange(workspace)}
                       disabled={isNavigating}
-                      className="w-full"
+                      className="w-full min-w-[120px] px-3 py-2"
                     >
                       {workspace.name}
                       {isNavigating && activeWorkspace.id === workspace.id && (
@@ -408,41 +625,78 @@ const handleCreateWorkspace = async () => {
                       )}
                     </DropdownMenuItem>
                     {props.workspaces.indexOf(workspace) !== 0 && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 ml-2">
+                        {/* Share Workspace Button - only show for non-personal workspaces and only for owners */}
+                        {workspace.name !== "Personal" && workspace.userId === props.userId && (
+                          <GenerateInvite workspace={workspace} disabled={isNavigating || isLoading}>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="rounded-full h-6 w-6"
+                              onClick={(e) => {
+                                e.stopPropagation(); 
+                              }}
+                              aria-label="Share workspace"
+                              title="Share workspace"
+                            >
+                              <Share2 className="h-3 w-3" />
+                            </Button>
+                          </GenerateInvite>
+                        )}
+                        
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="rounded-full"
+                          className="rounded-full h-6 w-6"
                           disabled={workspace.userId !== props.userId}
                           onClick={(e) => {
                             e.stopPropagation(); 
                             setWorkspaceToDelete(workspace.id);
                             setIsDeleteDialogOpen(true);
                           }}
+                          aria-label="Delete workspace"
+                          title="Delete workspace"
                         >
-                          <Trash2 className="" />
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                         <Button 
                           variant="ghost" 
                           size="icon" 
-                          className="rounded-full"
+                          className="rounded-full h-6 w-6"
                           onClick={(e) => {
                             e.stopPropagation(); 
                             handleLeaveWorkspace(workspace.id);
-                          }}>
-                            <ArrowRightFromLine />
-                          </Button>
+                          }}
+                          aria-label="Leave workspace"
+                          title="Leave workspace"
+                        >
+                          <ArrowRightFromLine className="h-3 w-3" />
+                        </Button>
                       </div>
                       
                     )}
                   </div>
                 ))}
-                <DialogTrigger asChild>
-                  <DropdownMenuItem>
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Workspace
-                  </DropdownMenuItem>
-                </DialogTrigger>
+                <div className="border-t pt-2 mt-2">
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem 
+                      className="px-3 py-2 cursor-pointer hover:bg-accent focus:bg-accent"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      <span className="font-medium">New Workspace</span>
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <AcceptInvite disabled={isNavigating || isLoading}>
+                    <DropdownMenuItem 
+                      className="px-3 py-2 cursor-pointer hover:bg-accent focus:bg-accent"
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      <User2 className="mr-2 h-4 w-4" />
+                      <span className="font-medium">Join Workspace</span>
+                    </DropdownMenuItem>
+                  </AcceptInvite>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
             <DialogContent>
@@ -474,6 +728,67 @@ const handleCreateWorkspace = async () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Workspace Members Dropdown - only show if there are multiple members */}
+          {props.workspaceMembers.length > 1 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="flex-shrink-0">
+                  <User2 className="h-4 w-4 md:mr-2" />
+                  <span className="hidden md:inline">
+                    Members ({props.workspaceMembers.length})
+                  </span>
+                  <span className="md:hidden ml-1 text-xs">
+                    {props.workspaceMembers.length}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 sm:w-64">
+                <div className="px-3 py-2 text-sm font-medium text-muted-foreground border-b">
+                  Workspace Members
+                </div>
+                {props.workspaceMembers.map((member) => (
+                  <div key={member.userId} className="flex items-center justify-between px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarImage src={member.image || undefined} alt={member.name} />
+                        <AvatarFallback className="text-xs">
+                          {member.name.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {member.name}
+                          {member.userId === props.userId && " (You)"}
+                          {member.userId === props.currentWorkspace.userId && " (Owner)"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {member.email}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Only show kick button if current user is owner and member is not the owner */}
+                    {props.currentWorkspace.userId === props.userId && 
+                     member.userId !== props.userId && 
+                     member.userId !== props.currentWorkspace.userId && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setMemberToKick({ userId: member.userId, name: member.name });
+                          setIsKickDialogOpen(true);
+                        }}
+                        title="Remove from workspace"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          
           <ModeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -550,21 +865,43 @@ const handleCreateWorkspace = async () => {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Dialog for kicking members */}
+        <Dialog open={isKickDialogOpen} onOpenChange={(open) => {
+          setIsKickDialogOpen(open);
+          if (!open) setMemberToKick({ userId: "", name: "" });
+        }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove Member</DialogTitle>
+              <p>Are you sure you want to remove <span className="font-semibold">{memberToKick.name}</span> from this workspace?</p>
+              <p className="text-sm text-muted-foreground">This action cannot be undone. They will lose access to all todos and will need to be re-invited to join again.</p>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsKickDialogOpen(false)} disabled={isKicking}>
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => handleKickFromWorkspace(activeWorkspace.id, memberToKick.userId)}
+                disabled={isKicking}
+              >
+                {isKicking ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  "Remove Member"
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       
       {/* Main content */}
       <div className="flex-1 p-4">
-        <ul className={`${props.workspaceMembers.length <= 1 ? "hidden" : "flex flex-wrap gap-2 mb-4"}`}>
-          {props.workspaceMembers.map((member) => (
-            <li key={member.userId}>
-              {member.userId === props.userId ? (
-                <span className="font-bold">You</span>
-              ) : (
-                <span className="font-semibold">{member.name}</span>
-              )}
-            </li>
-          ))}
-        </ul>
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex flex-col md:flex-row justify-between gap-4 md:gap-20">
             <div className="flex flex-col w-full md:w-1/3">

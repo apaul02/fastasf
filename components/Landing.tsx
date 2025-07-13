@@ -1,13 +1,12 @@
 "use client";
 import { motion } from "motion/react"
-import { GithubLoginButton } from "./GithubLoginButton";
+import { LoginDialog } from "./LoginDialog";
 import Image from "next/image";
 import { ModeToggle } from "./toggle-button";
 import { Inter } from "next/font/google";
 import { RiGithubFill } from "react-icons/ri";
 import { FaXTwitter } from "react-icons/fa6";
 import Link from "next/link";
-import { GoogleLoginButton } from "./GoogleLoginButton";
 
 
 const inter = Inter({ subsets: ["latin"] });
@@ -77,9 +76,8 @@ export function Landing() {
 					))}
 				</motion.p>
 				
-				<div className="mt-8 flex items-center">
-					<GithubLoginButton />
-          <GoogleLoginButton />
+				<div className="mt-8 flex items-center gap-2">
+					<LoginDialog />
 				</div>
         </div>
       </section>

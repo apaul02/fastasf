@@ -430,3 +430,66 @@ export async function leaveWorkspaceAction(workspaceId: string): Promise<TAction
     return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
   }
 }
+
+export async function kickFromWorkspaceAction(
+  workspaceId: string,
+  userId: string
+): Promise<TActionResult<workspaceMemberType>> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
+    }
+    console.log("Kicking user:", userId, "from workspace:", workspaceId, "by user:", session.user.id);
+
+
+    const kickedMember = await MUTATIONS.kickMemberFromWorkspace(session.user.id, workspaceId, userId);
+    return { success: true, data: kickedMember };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof NotFoundError) {
+      return { success: false, error: { message: "User or Workspace not found", code: 'NOT_FOUND' } };
+    }
+    if (error instanceof OwnershipError) {
+      return { success: false, error: { message: error.message, code: 'OWNERSHIP_ERROR' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
+    console.error("Error in kickFromWorkspaceAction:", error);
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
+  }
+}
+
+export async function checkWorkspaceMembershipAction(
+  workspaceId: string
+): Promise<TActionResult<{ isMember: boolean }>> {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+
+    if (!session?.user) {
+      throw new AuthError();
+    }
+
+    const membership = await QUERIES.getWorkspaceMembership(session.user.id, workspaceId);
+    return { success: true, data: { isMember: !!membership } };
+  } catch (error) {
+    if (error instanceof AuthError) {
+      return { success: false, error: { message: "User not authenticated", code: 'AUTH_ERROR' } };
+    }
+    if (error instanceof DatabaseError) {
+      return { success: false, error: { message: error.message, code: 'DB_ERROR' } };
+    }
+
+    console.error("Error in checkWorkspaceMembershipAction:", error);
+    return { success: false, error: { message: "An unknown error occurred", code: 'UNKNOWN_ERROR' } };
+  }
+}

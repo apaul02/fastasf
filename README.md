@@ -21,6 +21,8 @@
 
 7. **Lightning-Fast Responsiveness (Optimistic UI)**: Experience incredibly smooth and immediate interactions thanks to optimistic UI updates, making your app feel incredibly fast and responsive.
 
+8. **Automatic Date Extraction**: Smartly identifies and extracts dates from your task titles, automatically setting due dates and reminders for you.
+
 ---
 
 ## Tech Stack
